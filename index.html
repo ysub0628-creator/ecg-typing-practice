@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>심전도 타자연습</title>
+<style>
+:root{
+  --bg:#050505; --panel:#0b0b0b; --mon:#000;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --text:#f4f4f4; --muted:#8e8e8e; --dim:#767676;
+  --trace:#39ff8a; --cyan:#4fd8ff; --yellow:#ffd84f; --alarm:#ff4a4a;
+  --radius:18px;
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  --mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;overflow:hidden}
+body{display:flex;flex-direction:column;align-items:center;height:100vh;padding:22px 18px 26px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.app{position:relative;width:100%;max-width:980px;display:flex;flex-direction:column;gap:16px;flex:1;z-index:2;will-change:transform}
+.app.shake{animation:shake .42s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translate(-2px,1px) rotate(-.15deg)}20%,80%{transform:translate(5px,-2px) rotate(.2deg)}30%,50%,70%{transform:translate(-9px,2px) rotate(-.3deg)}40%,60%{transform:translate(9px,-1px) rotate(.3deg)}}
+.app.kick{animation:kick .22s ease-out}
+@keyframes kick{0%{transform:scale(1.012)}100%{transform:scale(1)}}
+
+/* 배경 이펙트 */
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at 50% 40%,transparent 50%,rgba(0,0,0,.72) 100%)}
+.grain{position:fixed;inset:-100px;pointer-events:none;z-index:30;opacity:.055;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain .9s steps(8) infinite}
+@keyframes grain{0%{transform:translate(0,0)}12%{transform:translate(-30px,20px)}25%{transform:translate(40px,-25px)}37%{transform:translate(-20px,-40px)}50%{transform:translate(35px,30px)}62%{transform:translate(-45px,5px)}75%{transform:translate(15px,-35px)}87%{transform:translate(-10px,40px)}100%{transform:translate(25px,-10px)}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:25}
+@media (prefers-reduced-motion:reduce){.grain{animation:none}.app.shake,.app.kick{animation:none}}
+
+/* 상단바 */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted);padding:0 4px}
+.top .brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:500;letter-spacing:-.01em;font-size:14px}
+.top .brand i{width:7px;height:7px;border-radius:50%;background:var(--trace);box-shadow:0 0 12px var(--trace);display:inline-block;animation:pulse 1.1s infinite}
+.top .brand span{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.stats{display:flex;gap:26px;font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:.1em;text-transform:uppercase;font-size:11px}
+.stats span{display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.stats b{color:var(--text);font-weight:400;font-size:18px;letter-spacing:-.02em;transition:transform .18s}
+.stats b.bump{animation:bump .3s ease-out}
+@keyframes bump{0%{transform:scale(1.35)}100%{transform:scale(1)}}
+
+/* 모니터 */
+.monitor{position:relative;background:var(--mon);border:1px solid var(--line2);border-radius:var(--radius);overflow:hidden;aspect-ratio:16/7;
+  box-shadow:0 0 0 1px rgba(0,0,0,.9),0 40px 90px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 120px rgba(0,0,0,.6)}
+.monitor::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 30%,transparent 80%,rgba(0,0,0,.35))}
+.monitor::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;background:repeating-linear-gradient(0deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px);opacity:.8}
+.monitor canvas{display:block;width:100%;height:100%}
+.monitor .lead{position:absolute;left:18px;top:14px;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;z-index:4}
+.monitor .lead b{color:var(--trace);font-weight:500;margin-left:6px}
+.monitor .hr{position:absolute;right:22px;top:12px;text-align:right;font-family:var(--mono);color:var(--trace);line-height:1;z-index:4}
+.monitor .hr small{display:block;font-size:11px;opacity:.7;margin-bottom:4px;letter-spacing:.2em}
+.monitor .hr b{display:inline-block;font-size:54px;font-weight:300;letter-spacing:-.04em;text-shadow:0 0 24px rgba(57,255,138,.45);transform-origin:right center;transition:transform .12s}
+.vitals{position:absolute;right:22px;top:86px;display:flex;flex-direction:column;gap:7px;text-align:right;font-family:var(--mono);line-height:1;z-index:4}
+.vitals .v small{display:block;font-size:11px;letter-spacing:.2em;opacity:.65;margin-bottom:3px}
+.vitals .v b{font-size:20px;font-weight:300;letter-spacing:-.02em}
+.vitals .cy{color:var(--cyan)} .vitals .ye{color:var(--yellow)} .vitals .wh{color:#e8e8e8}
+.monitor .hr b.beat{transform:scale(1.07)}
+.monitor .speed{position:absolute;left:18px;bottom:12px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.12em;z-index:4}
+.monitor .flash{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s ease-out;z-index:2}
+.monitor .flash.ok{background:radial-gradient(ellipse at center,rgba(57,255,138,.32),rgba(57,255,138,.06) 55%,transparent 75%)}
+.monitor .flash.bad{background:rgba(0,0,0,.75)}
+.monitor .flash.show{opacity:1;transition:none}
+.monitor .big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4;font-family:var(--mono);font-size:14px;letter-spacing:.36em;text-transform:uppercase;color:#fff;opacity:0}
+.monitor .big.go{animation:bigin 1.1s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes bigin{0%{opacity:0;transform:scale(1.6);filter:blur(10px)}18%{opacity:1;transform:scale(1);filter:blur(0)}70%{opacity:1}100%{opacity:0;transform:scale(.96);filter:blur(4px)}}
+.monitor .big.lg{font-size:24px;letter-spacing:.32em;text-shadow:0 0 30px rgba(255,255,255,.8)}
+.monitor .big.hold{opacity:1;animation:pulse .55s steps(2) infinite}
+/* 심실세동 경보·제세동 */
+.monitor.alarm{border-color:var(--alarm);animation:alarmb .5s steps(2) infinite}
+@keyframes alarmb{50%{box-shadow:0 0 0 1px var(--alarm),0 0 70px rgba(255,74,74,.35),0 40px 90px rgba(0,0,0,.75)}}
+.monitor.alarm .hr,.monitor.alarm .hr b{color:var(--alarm);text-shadow:0 0 24px rgba(255,74,74,.5)}
+.monitor .alarmTag{position:absolute;left:50%;top:12px;transform:translateX(-50%);font-family:var(--mono);font-size:11px;letter-spacing:.26em;background:var(--alarm);color:#fff;padding:5px 12px;border-radius:4px;display:none;z-index:4;animation:pulse .5s steps(2) infinite;white-space:nowrap}
+.monitor.alarm .alarmTag{display:block}
+.charge{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:46%;display:none;z-index:4;text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:#fff}
+.charge i{display:block;height:2px;background:rgba(255,255,255,.15);margin-top:8px;position:relative;overflow:hidden}
+.charge i b{position:absolute;left:0;top:0;height:100%;width:0;background:#fff;box-shadow:0 0 12px #fff}
+.charge.on{display:block} .charge.ready span{animation:pulse .3s steps(2) infinite}
+.app.jolt{animation:jolt .65s cubic-bezier(.36,.07,.19,.97)}
+@keyframes jolt{0%{transform:translate(0,0) scale(1.035)}15%{transform:translate(-20px,9px) rotate(-.9deg)}30%{transform:translate(17px,-11px) rotate(.8deg)}45%{transform:translate(-12px,6px) rotate(-.4deg)}60%{transform:translate(9px,-4px)}80%{transform:translate(-4px,2px)}100%{transform:none}}
+.timer{height:1px;background:var(--line);margin-top:-8px;position:relative}
+.timer i{position:absolute;left:0;top:-1px;display:block;height:3px;width:100%;background:var(--trace);transform-origin:left;box-shadow:0 0 14px rgba(57,255,138,.6);border-radius:2px}
+.timer i.low{background:var(--alarm);box-shadow:0 0 14px rgba(255,74,74,.6)}
+.timer i.low{animation:flick .25s steps(2) infinite}
+@keyframes flick{50%{opacity:.35}}
+
+/* 입력 영역 */
+.typebox{position:relative;min-height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+.cells{position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:0 1px;font-size:52px;font-weight:500;letter-spacing:-.025em;line-height:1.15;min-height:60px}
+.cells .c{color:rgba(255,255,255,.2);white-space:pre;transition:color .12s}
+.cells .c.ok{color:#fff;text-shadow:0 0 22px rgba(255,255,255,.45)}
+.cells .c.ok.new{animation:popin .22s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes popin{0%{transform:scale(1.5) translateY(-6px);filter:blur(5px);opacity:.3}100%{transform:scale(1) translateY(0);filter:blur(0);opacity:1}}
+.cells .c.bad{color:#9a9a9a;text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:#fff}
+.cells .c.mid{color:rgba(255,255,255,.7);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:8px;text-decoration-color:rgba(255,255,255,.4)}
+.cells .c.extra{color:#8a8a8a;text-decoration:line-through;text-decoration-color:#fff}
+.cells .caret{width:2px;height:50px;background:#fff;margin:0 3px;align-self:center;animation:blink 1s steps(1) infinite;box-shadow:0 0 10px rgba(255,255,255,.8)}
+@keyframes blink{50%{opacity:0}}
+.cells .ph{color:var(--dim);font-size:22px;font-weight:400;letter-spacing:-.01em}
+.cells .en{font-size:12px;align-self:center;margin-left:18px;font-family:var(--mono);font-weight:400;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;text-shadow:none}
+.sub{font-size:13px;color:var(--muted);min-height:20px;font-family:var(--mono);letter-spacing:.02em;transition:opacity .2s}
+.sub.ok{color:#cfcfcf} .sub.bad{color:#8f8f8f}
+.sub b{color:#fff;font-weight:500}
+.info{display:none;width:min(720px,100%);margin:4px auto 0;text-align:left;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.55;color:#bdbdbd;background:rgba(255,255,255,.025);animation:rise .3s cubic-bezier(.2,.8,.2,1)}
+.info.on{display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.info em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.kn{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px;line-height:1.5;color:#bdbdbd;margin-top:5px}
+.kn em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.miss .m.bad b{color:#fff} .miss .m.bad i{color:#fff}
+.miss .m .lv{font-family:var(--mono);font-size:11px;letter-spacing:.15em;border:1px solid var(--line2);border-radius:4px;padding:1px 5px;color:var(--muted);margin-left:6px;vertical-align:middle}
+.card.lib{max-width:720px}
+.cta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.cta a{display:block;padding:12px 14px;border:1px solid var(--line2);border-radius:12px;color:var(--text);text-decoration:none;font-size:13px;line-height:1.4;background:rgba(255,255,255,.03);transition:all .15s}
+.cta a:hover{border-color:#fff;background:rgba(255,255,255,.07)}
+.cta a[hidden]{display:none}
+@media (max-width:520px){.cta{grid-template-columns:1fr}}
+.card .note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6}
+.hintbtn{position:absolute;right:0;top:0;font-size:11px;font-family:var(--mono);letter-spacing:.1em;color:var(--muted);border:1px solid var(--line);padding:6px 10px;border-radius:999px;transition:all .15s}
+.hintbtn:hover{color:var(--text);border-color:var(--line2)}
+#ime{position:fixed;left:-9999px;top:0;width:10px;height:10px;opacity:0;font-size:16px}
+.pop{position:absolute;left:50%;top:-10px;transform:translateX(-50%);font-family:var(--mono);font-size:20px;font-weight:500;color:#fff;letter-spacing:.04em;pointer-events:none;text-shadow:0 0 20px rgba(255,255,255,.7);animation:popup 1s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes popup{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,-4px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-70px) scale(1)}}
+
+/* 키보드 */
+.kb{display:flex;flex-direction:column;gap:7px;align-items:center;user-select:none;margin-top:auto;padding-top:8px}
+.kb .row{display:flex;gap:7px}
+.kb .k{width:54px;height:46px;border-radius:9px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--muted);transition:background .1s,transform .06s,box-shadow .2s,border-color .1s;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.kb .k small{font-size:11px;letter-spacing:.08em;color:var(--dim);line-height:1}
+.kb .k em{font-style:normal;font-size:15px;color:#cfcfcf;line-height:1.1;margin-top:2px}
+.kb .k.w{width:84px} .kb .k.sp{width:310px}
+.kb .k.on{background:#f4f4f4;border-color:#fff;transform:translateY(2px);box-shadow:0 0 28px rgba(255,255,255,.35)}
+.kb .k.on em,.kb .k.on small{color:#050505}
+@media (max-width:720px){.kb{display:none}.vitals{display:none}.cells{font-size:36px}.monitor .hr b{font-size:34px}.stats{gap:16px}}
+
+/* 오버레이(시작·결과) */
+.overlay{position:fixed;inset:0;overflow:auto;background:rgba(5,5,5,.78);backdrop-filter:blur(18px) saturate(0);-webkit-backdrop-filter:blur(18px) saturate(0);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10;animation:fade .35s ease-out}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.overlay.hide{display:none}
+.card{width:100%;max-width:640px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid var(--line2);border-radius:26px;padding:34px 34px 28px;box-shadow:0 50px 120px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.1);animation:rise .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+.card .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.card h1{font-size:36px;font-weight:600;letter-spacing:-.035em;margin-bottom:8px;line-height:1.1}
+.card p.lead{color:var(--muted);font-size:14px;margin-bottom:26px;line-height:1.65}
+.opt{display:grid;grid-template-columns:84px 1fr;gap:14px 16px;align-items:start;margin-bottom:12px}
+.opt label.t{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 14px;border-radius:999px;border:1px solid var(--line2);background:transparent;font-size:14px;color:#bdbdbd;transition:all .15s;text-align:left}
+.chip:hover{border-color:rgba(255,255,255,.3);color:#fff}
+.chip.on{border-color:#fff;color:#050505;background:#f4f4f4;box-shadow:0 0 24px rgba(255,255,255,.12)}
+.chip small{display:block;font-size:11px;opacity:.55;margin-top:2px;letter-spacing:0}
+.primary{width:100%;margin-top:16px;padding:17px;border-radius:14px;background:#f4f4f4;color:#050505;font-weight:700;font-size:16px;letter-spacing:-.01em;transition:transform .08s,box-shadow .2s,background .15s;box-shadow:0 0 0 rgba(255,255,255,0)}
+.primary:hover{background:#fff;box-shadow:0 0 50px rgba(255,255,255,.22)} .primary:active{transform:scale(.99)}
+.ghost{width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1px solid var(--line);color:var(--muted);font-size:14px;transition:all .15s}
+.ghost:hover{color:var(--text);border-color:var(--line2)}
+.foot{margin-top:16px;font-size:12px;color:var(--muted);text-align:center;line-height:1.7}
+.foot kbd{font-family:var(--mono);border:1px solid var(--line2);padding:1px 7px;border-radius:5px;color:var(--text);font-size:11px}
+.foot b{color:var(--text);font-weight:500}
+
+/* 결과 */
+.res{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 22px}
+.res div{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:16px 10px 12px;text-align:center}
+.res b{display:block;font-family:var(--mono);font-size:30px;font-weight:200;letter-spacing:-.03em;margin-bottom:6px}
+.res span{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.miss{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:14px}
+.miss .m{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
+.miss .m:last-child{border-bottom:0}
+.miss .m b{font-weight:500}
+.miss .m b span{color:var(--muted);font-weight:400;font-family:var(--mono);font-size:11px;letter-spacing:.1em;margin-left:6px}
+.miss .m em{font-style:normal;color:var(--muted);font-size:12px;grid-column:1/-1}
+.miss .m i{font-style:normal;font-family:var(--mono);font-size:11px;color:#9a9a9a}
+.miss .none{padding:20px;text-align:center;color:#cfcfcf;font-size:14px}
+h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:0 0 10px}
+</style>
+</head>
+<body>
+<div class="vignette"></div>
+<div class="grain"></div>
+<canvas id="fx"></canvas>
+
+<div class="app" id="app">
+  <div class="top">
+    <div class="brand"><i></i>심전도 타자연습 <span id="modeTag"></span></div>
+    <div class="stats">
+      <span>문항 <b id="sQ">0/0</b></span>
+      <span>점수 <b id="sScore">0</b></span>
+      <span>콤보 <b id="sCombo">0</b></span>
+      <span>정확도 <b id="sAcc">—</b></span>
+    </div>
+  </div>
+
+  <div class="monitor" id="monitor">
+    <canvas id="cv"></canvas>
+    <div class="lead">Lead <b>II</b></div>
+    <div class="hr"><small>HR</small><b id="hr">--</b></div>
+    <div class="vitals"><div class="v cy"><small>SpO₂</small><b id="vSpo2">--</b></div><div class="v wh"><small>NIBP</small><b id="vBp">--/--</b></div><div class="v ye"><small>RESP</small><b id="vRr">--</b></div></div>
+    <div class="speed">25 mm/s · 10 mm/mV</div>
+    <div class="flash" id="flash"></div>
+    <div class="big" id="big"></div>
+    <div class="alarmTag">⚠ VF · 제세동 준비</div>
+    <div class="charge" id="charge"><span id="chargeTxt">CHARGING</span><i><b id="chargeBar"></b></i></div>
+  </div>
+  <div class="timer"><i id="timerBar"></i></div>
+
+  <div class="typebox" id="typebox">
+    <button class="hintbtn" id="hintBtn" title="Tab">HINT · TAB</button>
+    <div class="cells" id="cells"></div>
+    <div class="sub" id="sub"></div>
+    <div class="info" id="info"></div>
+    <input id="ime" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  </div>
+
+  <div class="kb" id="kb"></div>
+</div>
+
+<!-- 시작 화면 -->
+<div class="overlay" id="startOv">
+  <div class="card">
+    <div class="eyebrow">ECG · Lead II · Typing drill</div>
+    <h1>심전도 타자연습</h1>
+    <p class="lead">모니터에 리듬이 흘러갑니다. 사라지기 전에 리듬 이름을 치세요.<br>한글 이름과 영문 약어(VF, AF, SVT…) 모두 정답으로 인정합니다.</p>
+
+    <div class="opt">
+      <label class="t">범위</label>
+      <div class="chips" id="lvChips">
+        <button class="chip on" data-lv="1">기초<small>동율동·AF·VT·VF·PVC…</small></button>
+        <button class="chip on" data-lv="2">중급<small>방실차단·조동·SVT</small></button>
+        <button class="chip" data-lv="3">고급<small>토르사드·접합부·조율기…</small></button>
+      </div>
+      <label class="t">모드</label>
+      <div class="chips" id="modeChips">
+        <button class="chip on" data-mode="learn">학습<small>이름 보고 따라치기</small></button>
+        <button class="chip" data-mode="test">시험<small>리듬만 보고 맞히기</small></button>
+      </div>
+      <label class="t">시간</label>
+      <div class="chips" id="spdChips">
+        <button class="chip" data-sec="15">느림 15초</button>
+        <button class="chip on" data-sec="10">보통 10초</button>
+        <button class="chip" data-sec="6">빠름 6초</button>
+      </div>
+      <label class="t">문항</label>
+      <div class="chips" id="cntChips">
+        <button class="chip on" data-cnt="10">10</button>
+        <button class="chip" data-cnt="20">20</button>
+        <button class="chip" data-cnt="0">전체</button>
+      </div>
+      <label class="t">소리</label>
+      <div class="chips" id="sndChips">
+        <button class="chip on" data-snd="1">모니터 비프 ON</button>
+        <button class="chip" data-snd="0">OFF</button>
+      </div>
+      <label class="t">설명</label>
+      <div class="chips" id="infoChips">
+        <button class="chip on" data-info="1">답 뒤에 카드<small>설명·간호 2줄, 잠깐 멈춤</small></button>
+        <button class="chip" data-info="0">없음<small>빠르게 (촬영용)</small></button>
+      </div>
+    </div>
+    <button class="primary" id="startBtn">시작 (Enter)</button>
+    <button class="ghost" id="libBtn">리듬 사전 — 20개 설명·간호 중재 보기</button>
+    <div class="foot">정답은 <kbd>Enter</kbd> 없이 다 치면 자동 인정 · 시험 모드에서 <kbd>Tab</kbd>은 영문 약어 힌트 (점수 절반)<br>심실세동이 뜨면 이름을 친 뒤 <kbd>Space</kbd>로 제세동 (+300)<br>최고 점수 <b id="best">0</b></div>
+  </div>
+</div>
+
+<!-- 결과 화면 -->
+<div class="overlay hide" id="endOv">
+  <div class="card">
+    <div class="eyebrow">Result</div>
+    <h1>결과</h1>
+    <div class="res">
+      <div><b id="rScore">0</b><span>점수</span></div>
+      <div><b id="rAcc">0%</b><span>정확도</span></div>
+      <div><b id="rCombo">0</b><span>최고 콤보</span></div>
+      <div><b id="rRt">0.0s</b><span>평균 반응</span></div>
+    </div>
+    <h3>이번 라운드 복습 — 오답 먼저</h3>
+    <div class="miss" id="missList"></div>
+    <div class="cta"><a id="ctaPdf" target="_blank" rel="noopener">📄 심전도 알람 첫 대응 PDF 무료로 받기</a><a id="ctaAlert" target="_blank" rel="noopener">🔔 12월 워크북 나오면 알림 받기</a></div>
+    <button class="primary" id="againBtn">같은 설정으로 다시 (Enter)</button>
+    <button class="ghost" id="setupBtn">설정 바꾸기</button>
+  </div>
+</div>
+
+<!-- 리듬 사전 -->
+<div class="overlay hide" id="libOv" style="z-index:12">
+  <div class="card lib">
+    <div class="eyebrow">Library · 20 rhythms</div>
+    <h1>리듬 사전</h1>
+    <p class="lead">모니터에서 보이는 단서, 한 줄 설명, 간호사가 먼저 할 일. 기초 → 중급 → 고급 순서.</p>
+    <div class="miss" id="libList" style="max-height:58vh"></div>
+    <div class="note">학습용 요약입니다. 실제 처치는 소속 기관의 프로토콜과 의사 지시를 따릅니다.</div>
+    <button class="ghost" id="libClose">닫기 (Esc)</button>
+  </div>
+</div>
+
+<script>
+/* 결과 화면 버튼 링크 — 비워 두면 버튼이 숨겨짐 */
+const LINKS={pdf:'', alert:''};
+/* ================= 리듬 정의 ================= */
+const RHYTHMS=[
+ {id:'nsr', lv:1, name:'정상 동율동', en:'NSR', hr:75, clue:'규칙적 P-QRS-T, 60~100회/분, PR 0.12~0.20초',
+  alias:['정상동율동','정상동리듬','동율동','동리듬','정상리듬','정상심전도','nsr','sinus','sinusrhythm','normalsinusrhythm']},
+ {id:'sb', lv:1, name:'동서맥', en:'Sinus brady', hr:42, clue:'정상 모양인데 60회/분 미만',
+  alias:['동서맥','동성서맥','sinusbradycardia','sinusbrady','sb','브래디','bradycardia']},
+ {id:'st', lv:1, name:'동빈맥', en:'Sinus tachy', hr:128, clue:'정상 모양인데 100회/분 초과, P파 있음',
+  alias:['동빈맥','동성빈맥','sinustachycardia','sinustachy','st','타키','tachycardia']},
+ {id:'af', lv:1, name:'심방세동', en:'AF', hr:95, clue:'P파 없음 + 미세한 세동파 + RR 완전 불규칙',
+  alias:['심방세동','af','afib','a-fib','atrialfibrillation','에이핍','에이에프']},
+ {id:'vt', lv:1, name:'심실빈맥', en:'VT', hr:165, clue:'넓은 QRS가 규칙적으로 빠르게, P파 없음 → 맥박 확인',
+  alias:['심실빈맥','vt','v-tach','vtach','ventriculartachycardia','브이택','브이티']},
+ {id:'vf', lv:1, name:'심실세동', en:'VF', hr:0, clue:'파형 구분 불가, 무질서한 떨림 → 즉시 제세동',
+  alias:['심실세동','vf','v-fib','vfib','ventricularfibrillation','브이핍','브이에프']},
+ {id:'asys', lv:1, name:'무수축', en:'Asystole', hr:0, clue:'평탄선 → 리드·게인 확인 후 CPR, 제세동 아님',
+  alias:['무수축','심정지','asystole','flatline','플랫','에이시스톨']},
+ {id:'pvc', lv:1, name:'심실조기수축', en:'PVC', hr:75, clue:'넓고 이른 QRS가 끼어들고, 뒤에 보상성 휴지기',
+  alias:['심실조기수축','심실기외수축','조기심실수축','pvc','prematureventricularcontraction','브이피씨','피브이씨']},
+ {id:'avb1', lv:2, name:'1도 방실차단', en:'1° AVB', hr:70, clue:'PR 간격이 0.20초 넘게 일정하게 길다, 탈락 없음',
+  alias:['1도방실차단','일도방실차단','1도av차단','1도avblock','firstdegreeavblock','1stdegreeavblock','1도블락','1도차단','1stavb','avb1','1avb','1도']},
+ {id:'mob1', lv:2, name:'2도 방실차단 모비츠 1형', en:'Mobitz I', hr:60, clue:'PR이 점점 길어지다 QRS 하나 탈락 (웬케바흐)',
+  alias:['2도방실차단모비츠1형','2도방실차단1형','2도방실차단type1','2도방실차단타입1','2도1형','모비츠1형','모비츠1','모비츠i','웬케바흐','웽케바흐','mobitz1','mobitzi','mobitztype1','wenckebach','2도방실차단웬케바흐','seconddegreetype1','2도형1']},
+ {id:'mob2', lv:2, name:'2도 방실차단 모비츠 2형', en:'Mobitz II', hr:50, clue:'PR 일정한데 QRS가 갑자기 탈락 → 조율기 준비',
+  alias:['2도방실차단모비츠2형','2도방실차단2형','2도방실차단type2','2도방실차단타입2','2도2형','모비츠2형','모비츠2','모비츠ii','mobitz2','mobitzii','mobitztype2','seconddegreetype2','2도형2']},
+ {id:'avb3', lv:2, name:'3도 방실차단', en:'CHB', hr:38, clue:'P와 QRS가 각자 규칙적으로 따로 논다 (완전차단)',
+  alias:['3도방실차단','삼도방실차단','완전방실차단','완전차단','3도av차단','3도블락','3도차단','chb','completeheartblock','thirddegreeavblock','3rddegreeavblock','avb3','3avb','3도']},
+ {id:'afl', lv:2, name:'심방조동', en:'A-flutter', hr:75, clue:'톱니 모양 F파 300회/분, QRS는 규칙적 (4:1)',
+  alias:['심방조동','afl','aflutter','a-flutter','atrialflutter','플러터','에이플러터']},
+ {id:'sa', lv:2, name:'동정지', en:'Sinus arrest', hr:70, clue:'정상 리듬 중 P-QRS-T가 통째로 빠지는 긴 휴지',
+  alias:['동정지','동휴지','동방정지','동방결절정지','동방차단','sinusarrest','sinuspause','sinusexitblock','sa','pause','sinusarrest']},
+ {id:'svt', lv:2, name:'발작성 상심실성 빈맥', en:'SVT', hr:180, clue:'좁은 QRS가 150~250회/분으로 규칙적, P파 안 보임',
+  alias:['발작성상심실성빈맥','상심실성빈맥','상심실빈맥','svt','psvt','supraventriculartachycardia','에스브이티']},
+ {id:'tdp', lv:3, name:'토르사드 드 포앙', en:'TdP', hr:230, clue:'QRS 진폭이 커졌다 작아졌다 꼬인다 → 마그네슘',
+  alias:['토르사드드포앙','토르사드','토르사데','토사드','다형성심실빈맥','다형심실빈맥','tdp','torsades','torsadesdepointes','polymorphicvt']},
+ {id:'junc', lv:3, name:'접합부 리듬', en:'Junctional', hr:48, clue:'P파 없거나 역전, 좁은 QRS, 40~60회/분',
+  alias:['접합부리듬','접합부율동','방실접합부리듬','junctional','junctionalrhythm','jr','정션날','정셔널']},
+ {id:'ivr', lv:3, name:'심실고유리듬', en:'IVR', hr:32, clue:'넓은 QRS가 20~40회/분으로 느리게, P파 없음',
+  alias:['심실고유리듬','심실고유율동','심실이탈리듬','ivr','idioventricular','idioventricularrhythm']},
+ {id:'paced', lv:3, name:'심박조율기 리듬', en:'Paced', hr:70, clue:'QRS 직전에 수직 스파이크, 넓은 QRS',
+  alias:['심박조율기리듬','조율기리듬','페이싱리듬','페이스메이커리듬','인공심박동기리듬','paced','pacedrhythm','pacing','pacemaker','ventricularpaced']},
+ {id:'pac', lv:3, name:'심방조기수축', en:'PAC', hr:72, clue:'이른 박동인데 QRS는 좁고 P 모양이 다르다',
+  alias:['심방조기수축','심방기외수축','조기심방수축','pac','prematureatrialcontraction','피에이씨']},
+];
+/* 간단 지식(know) + 간호 업무(nurse) — 학습용 요약, 기관 프로토콜 우선 */
+const INFO={
+ nsr:{know:'동방결절에서 시작하는 정상 리듬. P-QRS-T가 규칙적이고 60~100회/분.',nurse:'정상. 다른 활력징후와 함께 기록하고 변화 추세를 본다.'},
+ sb:{know:'60회/분 미만. 운동선수·수면·베타차단제·미주신경 자극에서 흔하다.',nurse:'어지럼·저혈압·실신 등 증상 확인. 증상 있으면 아트로핀 준비, 서맥 유발 약물 확인, 경피 조율 대비.'},
+ st:{know:'100회/분 초과, P파 정상. 통증·발열·탈수·불안·빈혈·출혈에 대한 반응.',nurse:'리듬보다 원인을 찾는다: 통증·체온·수액 상태·출혈 확인 후 원인 교정.'},
+ af:{know:'심방이 350~600회/분으로 떨려 P파 없이 RR이 불규칙. 심방 내 혈전 → 뇌졸중 위험.',nurse:'맥박 결손 확인(심첨 vs 요골). 새로 생긴 AF나 심실반응 100 이상은 보고. 항응고제·심박수 조절제 투여 후 출혈 징후 관찰.'},
+ vt:{know:'심실 기원 빠른 리듬(100 초과), 넓은 QRS가 연속 3개 이상. 맥박이 있을 수도, 없을 수도.',nurse:'맥박 확인이 첫째. 무맥 → CPR·제세동. 맥박 있고 불안정 → 동기화 심율동전환, 안정 → 아미오다론. 제세동기 옆에 두고 즉시 보고.'},
+ vf:{know:'심실이 무질서하게 떨려 심박출이 없다. 제세동 가능한 심정지 리듬.',nurse:'무맥 확인 → 코드 콜, 즉시 CPR + 제세동, 2분마다 리듬 확인. 에피네프린·아미오다론 준비.'},
+ asys:{know:'전기 활동이 없는 평탄선. 제세동이 통하지 않는 리듬.',nurse:'먼저 리드 탈락·게인 확인. 무맥이면 CPR + 에피네프린. 가역적 원인(H & T) 찾기.'},
+ pvc:{know:'심실에서 조기 발생한 넓은 QRS, 뒤에 보상성 휴지기. 전해질 이상·저산소·카페인·허혈과 관련.',nurse:'빈도(분당 6개 이상·연속·R on T)와 증상 확인. K·Mg·산소포화도 확인 후 보고.'},
+ avb1:{know:'PR이 0.20초 넘게 일정하게 연장되지만 모두 전도된다. 디곡신·베타차단제·허혈과 관련.',nurse:'대개 무증상. 원인 약물 확인, 상위 차단으로 진행하는지 관찰.'},
+ mob1:{know:'PR이 점점 길어지다 QRS가 하나 탈락하는 주기 반복(웬케바흐). 대개 양성.',nurse:'증상·혈압 확인. 서맥 증상 시 아트로핀, 디곡신 등 약물 확인.'},
+ mob2:{know:'PR은 일정한데 QRS가 예고 없이 탈락. 완전 차단으로 진행 위험.',nurse:'즉시 보고. 경피 조율 패드 준비(아트로핀 효과 적음). 영구 조율기 가능성 설명.'},
+ avb3:{know:'P와 QRS가 완전히 따로 뛴다. 심실 탈출 리듬이라 20~40회/분으로 매우 느림.',nurse:'혈압·의식 확인. 경피 조율 즉시 준비(응급), 에피네프린·도파민 준비. 영구 조율기 대상.'},
+ afl:{know:'심방 250~350회/분의 톱니 F파. 심실은 2:1·4:1로 전도.',nurse:'AF와 같이 맥박 결손·항응고·심박수 조절. 불안정하면 동기화 심율동전환 준비.'},
+ sa:{know:'동방결절이 잠시 발화를 멈춰 P-QRS-T가 통째로 빠지는 긴 휴지. 미주신경 긴장·약물·동기능부전.',nurse:'휴지 3초 이상이거나 어지럼·실신 있으면 보고. 아트로핀·경피 조율 준비, 서맥 유발 약물 확인.'},
+ svt:{know:'심방·접합부 기원의 빠른 리듬(150~250), 좁은 QRS, P파 안 보임. 갑자기 시작하고 끝난다.',nurse:'미주신경 자극(발살바·얼음물) 시도 → 아데노신 급속 정주(6 → 12 mg, 바로 플러시, 모니터 켜고). 불안정하면 심율동전환.'},
+ tdp:{know:'QT 연장에서 생기는 다형성 VT. QRS가 꼬이듯 커졌다 작아진다. 저Mg·저K·QT 연장 약물.',nurse:'마그네슘 정주 준비. QT 연장 약물(항구토제·항정신병약·일부 항생제) 중단 확인. 무맥이면 제세동.'},
+ junc:{know:'방실접합부 기원 40~60회/분. P파가 없거나 역전(QRS 앞·뒤).',nurse:'증상·혈압 확인. 디곡신 독성 의심 시 농도 확인. 서맥 증상 시 아트로핀·조율.'},
+ ivr:{know:'심실 자체 탈출 리듬 20~40회/분, 넓은 QRS. 상위 박동원이 모두 실패한 상태.',nurse:'맥박 확인(PEA 가능). 경피 조율·에피네프린 준비. 리도카인은 탈출 리듬을 억제하므로 금기.'},
+ paced:{know:'조율기 스파이크 뒤에 넓은 QRS. 스파이크 뒤 QRS가 없으면 포획 실패.',nurse:'스파이크마다 QRS가 따라오는지(포획) 확인. 설정·배터리·전극 확인, 포획·감지 실패 시 보고.'},
+ pac:{know:'심방에서 조기 발생, P 모양이 다르고 QRS는 좁다. 카페인·스트레스·피로와 관련.',nurse:'대개 양성. 빈발하면 카페인·흡연·전해질 확인, AF로 진행하는지 관찰.'},
+};
+RHYTHMS.forEach(r=>Object.assign(r,INFO[r.id]||{}));
+const norm=s=>s.toLowerCase().normalize('NFC').replace(/ⅰ/g,'i').replace(/ⅱ/g,'ii').replace(/°/g,'도').replace(/[\s()\[\]·.,\-_'’"]/g,'');
+RHYTHMS.forEach(r=>{ r.set=new Set([r.name,r.en,...r.alias].map(norm)); });
+
+/* ================= 파형 모델 ================= */
+const g=(x,c,s)=>Math.exp(-((x-c)*(x-c))/(2*s*s));
+const D=120; // 미리 생성하는 길이(초)
+let ev={A:[],V:[],cont:null,noise:.012};
+function genEvents(r){
+  const A=[],V=[]; let cont=null;
+  const rr=60/(r.hr||60);
+  const sinus=(pr=.16,hr=r.hr)=>{ let t=.5; const R=60/hr; while(t<D){A.push({t});V.push({t:t+pr});t+=R;} };
+  switch(r.id){
+    case 'nsr': case 'sb': case 'st': sinus(); break;
+    case 'avb1': sinus(.32); break;
+    case 'sa': { let t=.5,i=0; while(t<D){ A.push({t}); V.push({t:t+.16}); i++; t+=(i%5===0)? rr*3.1 : rr; } } break;
+    case 'pvc': { let t=.5,i=0; while(t<D){ A.push({t}); V.push({t:t+.16}); if(i%4===2){ V.push({t:t+.16+rr*.55,w:2.1,amp:1.6,sign:-1}); t+=2*rr; } else t+=rr; i++; } } break;
+    case 'pac': { let t=.5,i=0; while(t<D){ if(i%5===4){ t-=rr*.38; A.push({t,amp:1.5,sh:.6}); V.push({t:t+.17}); t+=rr*1.12; } else { A.push({t}); V.push({t:t+.16}); t+=rr; } i++; } } break;
+    case 'af': { let t=.5; while(t<D){ V.push({t}); t+=rr*(.45+Math.random()*1.05);} cont=t=>.045*Math.sin(2*Math.PI*6.3*t)*Math.sin(2*Math.PI*.9*t)+.03*Math.sin(2*Math.PI*8.1*t+1); } break;
+    case 'afl': { let t=.5; while(t<D){ V.push({t,noT:1,amp:.9}); t+=.8; } cont=t=>{ const p=((t*5)%1); return .14-.3*(p<.8? p/.8 : 1-(p-.8)/.2); }; } break;
+    case 'svt': { let t=.5; while(t<D){ V.push({t,amp:.9}); t+=60/180; } } break;
+    case 'vt': { let t=.5; while(t<D){ V.push({t,w:2.0,amp:1.3,sign:1}); t+=60/165; } } break;
+    case 'vf': { const f=[4.1,5.3,6.7,3.2],ph=[0,1.3,2.1,.4]; cont=t=>{ let v=0; for(let i=0;i<4;i++) v+=Math.sin(2*Math.PI*f[i]*t*(1+.08*Math.sin(t*.7+i))+ph[i])*(.22+.12*Math.sin(t*1.9+i*2)); return v*.75; }; } break;
+    case 'asys': cont=t=>.02*Math.sin(2*Math.PI*.3*t); break;
+    case 'mob1': { let t=.5,k=0; const PR=[.18,.30,.44]; while(t<D){ A.push({t}); if(k%4<3) V.push({t:t+PR[k%4]}); t+=.9; k++; } } break;
+    case 'mob2': { let t=.5,k=0; while(t<D){ A.push({t}); if(k%3!==2) V.push({t:t+.16}); t+=.8; k++; } } break;
+    case 'avb3': { let t=.5; while(t<D){ A.push({t}); t+=.75; } t=.9; while(t<D){ V.push({t,w:1.9,amp:1.0,sign:1}); t+=60/38; } } break;
+    case 'junc': { let t=.5; while(t<D){ V.push({t,amp:.95}); A.push({t:t+.13,amp:-.7}); t+=60/48; } } break;
+    case 'ivr': { let t=.5; while(t<D){ V.push({t,w:2.2,amp:1.1,sign:1}); t+=60/32; } } break;
+    case 'tdp': { let t=.5; while(t<D){ const ph=Math.sin(Math.PI*t/2.4); V.push({t,w:1.9,amp:.35+1.3*Math.abs(ph),sign:ph>=0?1:-1}); t+=60/230; } } break;
+    case 'paced': { let t=.5; while(t<D){ V.push({t,w:1.9,amp:1.2,sign:1,spike:1}); t+=60/70; } } break;
+  }
+  ev={A,V,cont,noise:r.id==='asys'?.006:.012};
+}
+function qrs(x,b){
+  const w=b.w||1, amp=b.amp||1, s=b.sign||1; let v=0;
+  if(b.spike) v+=2.2*g(x,-.018,.0025);
+  if(w>1.4){
+    v+= s*amp*1.05*g(x,.045*w,.02*w);
+    v+= -s*amp*.25*g(x,.1*w,.025*w);
+    v+= -s*.45*g(x,.34,.075); // discordant T
+  } else {
+    v+= -.08*g(x,.012,.007);
+    v+= amp*1.15*g(x,.03,.011);
+    v+= -.25*g(x,.05,.01);
+    if(!b.noT) v+= .3*amp*g(x,.3,.05);
+  }
+  return v;
+}
+function pw(x,a){ const amp=.15*(a.amp||1); return amp*g(x,0,.022*(a.sh||1)); }
+function sig(t){
+  let v=ev.cont?ev.cont(t):0;
+  for(const b of ev.V){ const x=t-b.t; if(x>-.06&&x<.7) v+=qrs(x,b); }
+  for(const a of ev.A){ const x=t-(a.t+.05); if(x>-.1&&x<.1) v+=pw(x,a); }
+  v+=.015*Math.sin(2*Math.PI*.22*t)+ev.noise*(Math.random()-.5);
+  return v;
+}
+
+/* ================= 모니터 캔버스 ================= */
+const cv=document.getElementById('cv'), cx=cv.getContext('2d'); const hrEl=document.getElementById('hr');
+const WIN=6; let buf=null,bufN=0,lastT=null,t0=0,running=false,lastHrUpd=-1;
+function layout(){ const dpr=devicePixelRatio||1; const W=Math.floor(cv.clientWidth*dpr),H=Math.floor(cv.clientHeight*dpr); /* clientWidth: 흔들림·킥 transform에 영향받지 않음 */ if(cv.width!==W||cv.height!==H){ cv.width=W;cv.height=H; const nb=new Float32Array(W).fill(NaN); if(buf&&bufN){ for(let i=0;i<W;i++) nb[i]=buf[Math.min(bufN-1,Math.floor(i*bufN/W))]; } buf=nb; bufN=W; } return {W,H,dpr}; }
+const PRE=3; // 시작 시 미리 채워 두는 스트립 길이(초)
+function restartStrip(){ t0=performance.now()/1000-PRE; lastT=0; lastHrUpd=-1; if(buf) buf.fill(NaN); }
+function frame(){
+  requestAnimationFrame(frame);
+  fxFrame();
+  const {W,H,dpr}=layout(); if(!running){ drawGrid(W,H,dpr); return; }
+  const now=performance.now()/1000-t0; if(lastT===null) lastT=now-.016;
+  const pps=W/WIN, mm=pps/25;
+  for(let t=lastT;t<now;t+=1/600){ const pos=t%WIN; const xi=Math.min(bufN-1,Math.floor(pos*pps)); buf[xi]=sig(t); }
+  for(const b of ev.V){ if(b.t>lastT&&b.t<=now){ onBeat(); break; } }
+  lastT=now;
+  drawGrid(W,H,dpr);
+  const base=H*.56, cursor=Math.floor((now%WIN)*pps);
+  // 잔광: 커서에서 멀어질수록 어두워지는 형광 트레이스
+  const CH=Math.max(8,Math.floor(18*dpr));
+  cx.lineJoin='round'; cx.lineCap='round'; cx.strokeStyle='#39ff8a';
+  let pen=false, px=0, py=0;
+  for(let start=0;start<bufN;start+=CH){
+    const mid=start+CH/2, age=((cursor-mid+bufN)%bufN)/bufN; // 0=방금 그림
+    const k=Math.pow(1-age,1.7);
+    cx.globalAlpha=.14+.86*k; cx.lineWidth=(1.3+1.1*k)*dpr; cx.shadowColor='rgba(57,255,138,'+(.85*k)+')'; cx.shadowBlur=(2+10*k)*dpr;
+    cx.beginPath(); if(pen) cx.moveTo(px,py);
+    for(let i=start;i<Math.min(bufN,start+CH);i++){
+      const gap=i>cursor&&i<cursor+26*dpr; const v=buf[i];
+      if(gap||isNaN(v)){pen=false;continue;}
+      const y=base-v*10*mm; if(!pen){cx.moveTo(i,y);pen=true;} else cx.lineTo(i,y); px=i; py=y;
+    }
+    cx.stroke();
+  }
+  cx.globalAlpha=1; cx.shadowBlur=0;
+  cx.fillStyle='rgba(57,255,138,.95)'; cx.shadowColor='rgba(57,255,138,.9)'; cx.shadowBlur=10*dpr; cx.fillRect(cursor,0,1.5*dpr,H); cx.shadowBlur=0;
+  // HR 표시 (0.5초마다)
+  if(now-lastHrUpd>.5){ lastHrUpd=now; const id=S.cur&&S.cur.id;
+    if(id==='vf'&&!S.shocked) hrEl.textContent='---'; else if(S.shocked){ hrEl.textContent=now>S.shockT+1.9?'75':'---'; } else if(id==='asys') hrEl.textContent='0';
+    else if(now<6&&!S.shocked) hrEl.textContent=S.cur?S.cur.hr:'--';
+    else { const bs=ev.V.filter(b=>b.t>now-6&&b.t<=now); hrEl.textContent=bs.length>=2? Math.round(60*(bs.length-1)/(bs[bs.length-1].t-bs[0].t)) : '---'; } }
+}
+function drawGrid(W,H,dpr){
+  cx.fillStyle='#000'; cx.fillRect(0,0,W,H);
+  const mm=W/WIN/25;
+  cx.lineWidth=1; cx.strokeStyle='rgba(57,255,138,.05)'; cx.beginPath();
+  for(let x=0;x<W;x+=mm){cx.moveTo(x,0);cx.lineTo(x,H);} for(let y=0;y<H;y+=mm){cx.moveTo(0,y);cx.lineTo(W,y);} cx.stroke();
+  cx.strokeStyle='rgba(57,255,138,.11)'; cx.beginPath();
+  for(let x=0;x<W;x+=mm*5){cx.moveTo(x,0);cx.lineTo(x,H);} for(let y=0;y<H;y+=mm*5){cx.moveTo(0,y);cx.lineTo(W,y);} cx.stroke();
+}
+let beatTO=null;
+function onBeat(){ if(S.snd) beep(); hrEl.classList.add('beat'); clearTimeout(beatTO); beatTO=setTimeout(()=>hrEl.classList.remove('beat'),110); }
+requestAnimationFrame(frame);
+
+/* ================= 이펙트 레이어(입자·노이즈) ================= */
+const fx=document.getElementById('fx'), fxc=fx.getContext('2d'); let parts=[], noiseUntil=0, flashUntil=0;
+function fxFrame(){
+  const dpr=devicePixelRatio||1, W=Math.floor(innerWidth*dpr), H=Math.floor(innerHeight*dpr);
+  if(fx.width!==W||fx.height!==H){ fx.width=W; fx.height=H; }
+  const now=performance.now();
+  if(!parts.length && now>noiseUntil && now>flashUntil){ if(fx._dirty){ fxc.clearRect(0,0,W,H); fx._dirty=false; } return; }
+  fxc.clearRect(0,0,W,H); fx._dirty=true;
+  if(now<flashUntil){ const a=(flashUntil-now)/flashDur; fxc.fillStyle='rgba(255,255,255,'+(flashA*a)+')'; fxc.fillRect(0,0,W,H); }
+  if(now<noiseUntil){ fxc.fillStyle='rgba(255,255,255,.9)'; for(let i=0;i<160;i++){ const y=Math.random()*H, w=20+Math.random()*W*.25; fxc.globalAlpha=Math.random()*.25; fxc.fillRect(Math.random()*W,y,w*dpr,Math.random()*2*dpr); } fxc.globalAlpha=1; }
+  parts=parts.filter(p=>now<p.die);
+  for(const p of parts){ const t=(now-p.born)/(p.die-p.born); const x=p.x+p.vx*t*p.dist, y=p.y+p.vy*t*p.dist+t*t*p.g; const a=(1-t)*(1-t);
+    fxc.globalAlpha=a; fxc.fillStyle='#fff'; fxc.shadowColor='rgba(255,255,255,.9)'; fxc.shadowBlur=8*dpr;
+    if(p.line){ fxc.strokeStyle='#fff'; fxc.lineWidth=p.r*dpr; fxc.beginPath(); fxc.moveTo(x*dpr,y*dpr); fxc.lineTo((x-p.vx*18)*dpr,(y-p.vy*18)*dpr); fxc.stroke(); }
+    else { fxc.beginPath(); fxc.arc(x*dpr,y*dpr,p.r*dpr*(1-t*.5),0,Math.PI*2); fxc.fill(); } }
+  fxc.globalAlpha=1; fxc.shadowBlur=0;
+}
+function burst(x,y,n=34,sc=1,down=false){ const now=performance.now(); for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, sp=.6+Math.random()*1; let vx=Math.cos(a)*sp, vy=Math.sin(a)*sp; if(down){ vx*=.5; vy=.3+Math.random()*.9; } parts.push({x,y,vx,vy,dist:(70+Math.random()*120)*sc,g:(30+Math.random()*40)*(down?3:1),r:(1+Math.random()*2.2)*Math.max(.7,sc),line:Math.random()<.35,born:now,die:now+520+Math.random()*420}); } }
+function burstEl(el,n,sc=1,down=false){ const r=el.getBoundingClientRect(); if(!r.width) return; burst(r.left+r.width/2,r.top+r.height/2,n,sc,down); }
+let flashDur=160, flashA=.18;
+function whiteFlash(ms=160,a=.18){ flashDur=ms; flashA=a; flashUntil=performance.now()+ms; }
+function noiseBurst(){ noiseUntil=performance.now()+170; }
+
+/* ================= 소리 ================= */
+let AC=null; function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); }catch(e){} return AC; }
+function tone(f,dur,type='sine',gain=.08,when=0){ try{ const a=ac(); if(!a) return; const o=a.createOscillator(),gn=a.createGain(); o.type=type; o.frequency.value=f; gn.gain.setValueAtTime(gain,a.currentTime+when); gn.gain.exponentialRampToValueAtTime(.0001,a.currentTime+when+dur); o.connect(gn).connect(a.destination); o.start(a.currentTime+when); o.stop(a.currentTime+when+dur+.02);}catch(e){} }
+function beep(){ if(!S.snd) return; tone(880,.07,'sine',.05); }
+function sfxOk(){ if(!S.snd) return; tone(660,.08,'triangle',.07); tone(990,.14,'triangle',.07,.07); }
+function sfxBad(){ if(!S.snd) return; tone(180,.22,'sawtooth',.05); }
+
+/* ================= 키보드 표시 ================= */
+const KB=[[['KeyQ','ㅂ','Q'],['KeyW','ㅈ','W'],['KeyE','ㄷ','E'],['KeyR','ㄱ','R'],['KeyT','ㅅ','T'],['KeyY','ㅛ','Y'],['KeyU','ㅕ','U'],['KeyI','ㅑ','I'],['KeyO','ㅐ','O'],['KeyP','ㅔ','P']],
+ [['KeyA','ㅁ','A'],['KeyS','ㄴ','S'],['KeyD','ㅇ','D'],['KeyF','ㄹ','F'],['KeyG','ㅎ','G'],['KeyH','ㅗ','H'],['KeyJ','ㅓ','J'],['KeyK','ㅏ','K'],['KeyL','ㅣ','L']],
+ [['ShiftLeft','⇧','','w'],['KeyZ','ㅋ','Z'],['KeyX','ㅌ','X'],['KeyC','ㅊ','C'],['KeyV','ㅍ','V'],['KeyB','ㅠ','B'],['KeyN','ㅜ','N'],['KeyM','ㅡ','M'],['Backspace','⌫','','w']],
+ [['Digit1','1',''],['Digit2','2',''],['Digit3','3',''],['Space','','','sp'],['Enter','↵','','w']]];
+const kbEl=document.getElementById('kb');
+KB.forEach(row=>{ const r=document.createElement('div'); r.className='row'; row.forEach(([code,ko,en,cls])=>{ const k=document.createElement('div'); k.className='k'+(cls?' '+cls:''); k.dataset.code=code; k.innerHTML=(en?`<small>${en}</small>`:'')+`<em>${ko}</em>`; r.appendChild(k); }); kbEl.appendChild(r); });
+const keyOn=(code,on)=>{ const k=kbEl.querySelector(`[data-code="${code}"]`)||(code==='ShiftRight'?kbEl.querySelector('[data-code="ShiftLeft"]'):null); if(k) k.classList.toggle('on',on); };
+addEventListener('keydown',e=>keyOn(e.code,true)); addEventListener('keyup',e=>keyOn(e.code,false));
+
+/* ================= 게임 상태 ================= */
+const S={lv:new Set([1,2]),mode:'learn',sec:10,cnt:10,snd:1,info:1,queue:[],cur:null,i:0,score:0,combo:0,best:0,right:0,wrong:0,rts:[],misses:[],hint:false,tStart:0,timer:null,locked:false,bestScore:0};
+const $=id=>document.getElementById(id);
+const ime=$('ime'), cells=$('cells'), sub=$('sub'), typebox=$('typebox'), timerBar=$('timerBar'), flash=$('flash'), app=$('app'), big=$('big');
+try{ S.bestScore=+localStorage.getItem('ecgtype_best')||0; }catch(e){} $('best').textContent=S.bestScore;
+
+function chips(id,onSel,multi){ $(id).addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b) return; if(multi){ b.classList.toggle('on'); if(!$(id).querySelector('.chip.on')) b.classList.add('on'); } else { $(id).querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); b.classList.add('on'); } onSel(); }); }
+chips('lvChips',()=>{ S.lv=new Set([...$('lvChips').querySelectorAll('.chip.on')].map(c=>+c.dataset.lv)); },true);
+chips('modeChips',()=>{ S.mode=$('modeChips').querySelector('.chip.on').dataset.mode; });
+chips('spdChips',()=>{ S.sec=+$('spdChips').querySelector('.chip.on').dataset.sec; });
+chips('cntChips',()=>{ S.cnt=+$('cntChips').querySelector('.chip.on').dataset.cnt; });
+chips('sndChips',()=>{ S.snd=+$('sndChips').querySelector('.chip.on').dataset.snd; });
+chips('infoChips',()=>{ S.info=+$('infoChips').querySelector('.chip.on').dataset.info; });
+const info=$('info');
+const kn=r=>`<div class="kn"><em>설명</em><div>${r.know||''}</div><em>간호</em><div>${r.nurse||''}</div></div>`;
+function showInfo(r){ if(!S.info||!r) return; info.innerHTML=`<em>설명</em><div>${r.know||''}</div><em>간호</em><div>${r.nurse||''}</div>`; info.classList.add('on'); }
+function hideInfo(){ info.classList.remove('on'); }
+/* 리듬 사전 */
+const LV={1:'기초',2:'중급',3:'고급'};
+$('libList').innerHTML=RHYTHMS.slice().sort((a,b)=>a.lv-b.lv).map(r=>`<div class="m"><b>${r.name}<span>${r.en}</span><span class="lv">${LV[r.lv]}</span></b><i></i><em>${r.clue}</em>${kn(r)}</div>`).join('');
+$('libBtn').addEventListener('click',()=>{ $('libOv').classList.remove('hide'); });
+$('libClose').addEventListener('click',()=>{ $('libOv').classList.add('hide'); });
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+/* URL 파라미터(촬영용): ?seq=vt,vf,af&mode=test&sec=8&snd=0 */
+const P=new URLSearchParams(location.search);
+if(P.get('mode')){ S.mode=P.get('mode')==='test'?'test':'learn'; $('modeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.mode===S.mode)); }
+if(P.get('sec')){ S.sec=Math.max(3,+P.get('sec')||10); }
+if(P.get('snd')!==null){ S.snd=+P.get('snd')?1:0; $('sndChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',+c.dataset.snd===S.snd)); }
+if(P.get('info')!==null){ S.info=+P.get('info')?1:0; $('infoChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',+c.dataset.info===S.info)); }
+const SEQ=(P.get('seq')||'').split(',').map(s=>RHYTHMS.find(r=>r.id===s.trim())).filter(Boolean);
+function startGame(){
+  ac();
+  const pool=RHYTHMS.filter(r=>S.lv.has(r.lv)); let q=[];
+  if(SEQ.length){ q=SEQ.slice(); }
+  else {
+    const n=S.cnt||pool.length; while(q.length<n){ q=q.concat(shuffle(pool.slice())); } q=q.slice(0,n);
+    for(let i=1;i<q.length;i++) if(q[i].id===q[i-1].id){ const j=q.findIndex((r,k)=>k>i&&r.id!==q[i-1].id); if(j>0) [q[i],q[j]]=[q[j],q[i]]; }
+  }
+  Object.assign(S,{queue:q,i:0,score:0,combo:0,best:0,right:0,wrong:0,rts:[],misses:[],locked:false});
+  $('modeTag').textContent=S.mode==='learn'?'Learn':'Test';
+  $('startOv').classList.add('hide'); $('endOv').classList.add('hide'); running=true;
+  next();
+}
+let lastLen=0;
+function next(){
+  if(S.i>=S.queue.length) return endGame();
+  S.cur=S.queue[S.i]; S.hint=false; S.locked=false;
+  genEvents(S.cur); restartStrip();
+  S.shock=null; S.shocked=false; charge.className='charge'; bigClear(); if(S.cur.id==='vf') alarmStart(); else alarmStop();
+  setVitals(S.cur.id);
+  ime.value=''; lastLen=0; sub.textContent=''; sub.className='sub'; hideInfo(); render();
+  $('hintBtn').style.visibility=S.mode==='test'?'visible':'hidden';
+  updStats();
+  S.tStart=performance.now();
+  clearInterval(S.timer); timerBar.style.transform='scaleX(1)'; timerBar.classList.remove('low');
+  S.timer=setInterval(()=>{ const el=(performance.now()-S.tStart)/1000, left=Math.max(0,1-el/S.sec); timerBar.style.transform=`scaleX(${left})`; timerBar.classList.toggle('low',left<.3); if(left<=0) miss('시간 초과'); },50);
+  setTimeout(()=>ime.focus(),0);
+}
+/* 활력징후 패널: 리듬에 맞춰 대충 그럴듯하게 */
+function setVitals(id){ const v=['vf','asys'].includes(id)?['--','--/--','--']: ['vt','tdp','ivr','avb3'].includes(id)?['91','84/52','24']: ['svt','af','afl'].includes(id)?['95','102/64','20']: ['sb','junc','mob2','sa'].includes(id)?['96','96/58','14']: ['98','118/76','16']; $('vSpo2').textContent=v[0]; $('vBp').textContent=v[1]; $('vRr').textContent=v[2]; }
+function setStat(id,v){ const el=$(id); if(el.textContent!==String(v)){ el.textContent=v; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } }
+function updStats(){ setStat('sQ',`${Math.min(S.i+1,S.queue.length)}/${S.queue.length}`); setStat('sScore',S.score); setStat('sCombo',S.combo); const t=S.right+S.wrong; setStat('sAcc',t?Math.round(S.right/t*100)+'%':'—'); }
+
+/* ----- 입력 렌더 ----- */
+let composing=false;
+ime.addEventListener('compositionstart',()=>composing=true);
+ime.addEventListener('compositionend',()=>{composing=false; onInput();});
+ime.addEventListener('input',onInput);
+const esc=s=>s===' '?'&nbsp;':String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function render(){
+  const typed=ime.value; const target=S.cur? S.cur.name : ''; let html='';
+  const U=[...typed]; const grew=U.length>lastLen; lastLen=U.length;
+  if(S.mode==='learn'){
+    const T=[...target];
+    for(let i=0;i<Math.max(T.length,U.length);i++){
+      const tc=T[i], uc=U[i]; const nw=(grew&&i===U.length-1)?' new':'';
+      if(uc===undefined){ if(i===U.length) html+='<span class="caret"></span>'; html+=`<span class="c">${esc(tc)}</span>`; }
+      else if(tc===undefined) html+=`<span class="c extra">${esc(uc)}</span>`;
+      else if(uc===tc) html+=`<span class="c ok${nw}">${esc(uc)}</span>`;
+      else if(i===U.length-1&&composing) html+=`<span class="c mid">${esc(uc)}</span>`;
+      else html+=`<span class="c bad">${esc(uc)}</span>`;
+    }
+    if(U.length>=T.length) html+='<span class="caret"></span>';
+    if(S.cur) html+=`<span class="c en">${S.cur.en}</span>`;
+  } else {
+    if(!typed) html+='<span class="ph">리듬 이름을 입력하세요</span>';
+    else html+=U.map((c,i)=>`<span class="c ok${(grew&&i===U.length-1)?' new':''}">${esc(c)}</span>`).join('');
+    html+='<span class="caret"></span>';
+    if(S.hint&&S.cur) html+=`<span class="c en">${S.cur.en}</span>`;
+  }
+  cells.innerHTML=html;
+  if(grew){ const nw=cells.querySelector('.c.ok.new'); if(nw) burstEl(nw,7,.42); }
+}
+function onInput(){ if(S.locked||!S.cur) return; render(); if(!composing && S.cur.set.has(norm(ime.value))) correct(); }
+ime.addEventListener('keydown',e=>{
+  if(S.locked){ e.preventDefault(); return; }
+  if(e.key==='Enter'){ e.preventDefault(); if(composing||e.isComposing) return; if(!ime.value.trim()) return; if(S.cur.set.has(norm(ime.value))) correct(); else miss('오답: '+ime.value); }
+  if(e.key==='Tab'){ e.preventDefault(); if(S.mode==='test'){ S.hint=true; render(); } }
+  if(e.key==='Escape'){ e.preventDefault(); ime.value=''; render(); }
+});
+$('hintBtn').addEventListener('click',()=>{ S.hint=true; render(); ime.focus(); });
+
+function cellsCenter(){ const r=cells.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2}; }
+function scorePop(gain){ const p=document.createElement('div'); p.className='pop'; p.textContent='+'+gain; typebox.appendChild(p); setTimeout(()=>p.remove(),1000); }
+function bigText(t){ big.textContent=t; big.className='big'; void big.offsetWidth; big.className='big go'; }
+function correct(){
+  S.locked=true; clearInterval(S.timer);
+  const rt=(performance.now()-S.tStart)/1000; S.rts.push(rt);
+  S.combo++; S.best=Math.max(S.best,S.combo); S.right++;
+  const bonus=Math.round(Math.max(0,1-rt/S.sec)*100); let gain=100+bonus+Math.min(S.combo,10)*10; if(S.hint) gain=Math.round(gain/2);
+  S.score+=gain; updStats(); sfxOk();
+  sub.className='sub ok'; sub.innerHTML=`<b>${S.cur.name}</b> · ${S.cur.clue}`;
+  cells.querySelectorAll('.c.ok').forEach(c=>{ c.classList.remove('new'); c.style.textShadow='0 0 34px rgba(255,255,255,.9)'; });
+  const oks=[...cells.querySelectorAll('.c.ok')]; if(oks.length) oks.forEach((el,i)=>setTimeout(()=>burstEl(el,S.combo>=5?12:8,.85),i*22)); else { const c=cellsCenter(); burst(c.x,c.y,34); }
+  scorePop(gain); whiteFlash();
+  app.classList.remove('kick'); void app.offsetWidth; app.classList.add('kick');
+  if([3,5,10,15,20].includes(S.combo)) bigText('Combo ×'+S.combo);
+  flashMon('ok'); S.i++; showInfo(S.cur);
+  if(S.cur.id==='vf') startShock(); else setTimeout(next, S.info?2400:(S.mode==='learn'?720:1100));
+}
+/* ----- 심실세동 돌발 이벤트: 경보 → 정답 → 충전 → Space 충격 → 동율동 회복 ----- */
+const monitor=$('monitor'), charge=$('charge'), chargeTxt=$('chargeTxt'), chargeBar=$('chargeBar');
+function alarmStart(){ alarmStop(); monitor.classList.add('alarm'); S.alarm=setInterval(()=>{ if(S.snd){ tone(1100,.09,'square',.03); tone(1400,.09,'square',.03,.12); } },600); }
+function alarmStop(){ clearInterval(S.alarm); S.alarm=null; monitor.classList.remove('alarm'); }
+function chargeWhine(){ try{ const a=ac(); if(!a) return; const o=a.createOscillator(),gn=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(300,a.currentTime); o.frequency.exponentialRampToValueAtTime(1800,a.currentTime+1.3); gn.gain.setValueAtTime(.03,a.currentTime); gn.gain.linearRampToValueAtTime(.05,a.currentTime+1.3); gn.gain.exponentialRampToValueAtTime(.0001,a.currentTime+1.5); o.connect(gn).connect(a.destination); o.start(); o.stop(a.currentTime+1.55); }catch(e){} }
+function bigHold(t){ big.textContent=t; big.className='big lg hold'; }
+function bigClear(){ big.className='big'; }
+function startShock(){
+  alarmStop(); S.shock='charging'; charge.className='charge on'; chargeTxt.textContent='CHARGING · 200 J';
+  chargeBar.style.transition='none'; chargeBar.style.width='0'; void chargeBar.offsetWidth; chargeBar.style.transition='width 1.3s cubic-bezier(.3,.7,.3,1)'; chargeBar.style.width='100%';
+  sub.className='sub ok'; sub.innerHTML='<b>심실세동</b> · 제세동기 충전 중…';
+  if(S.snd) chargeWhine();
+  S.shockTO=setTimeout(()=>{ S.shock='ready'; charge.classList.add('ready'); chargeTxt.textContent='READY · 200 J'; bigHold('SPACE — SHOCK'); sub.innerHTML='<b>충전 완료</b> · Space 키로 충격!'; S.shockTO=setTimeout(()=>deliverShock(false),4000); },1400);
+}
+function deliverShock(byUser){
+  if(S.shock!=='ready'&&S.shock!=='charging') return; clearTimeout(S.shockTO); S.shock='done';
+  charge.className='charge on'; chargeTxt.textContent=byUser?'SHOCK DELIVERED':'SHOCK · AUTO'; bigClear();
+  const ts=performance.now()/1000-t0, vfc=ev.cont||(()=>0);
+  ev.cont=t=> t<ts? vfc(t) : (t<ts+.14 ? 3.2*Math.sin((t-ts)/.14*Math.PI) : .01*Math.sin(2*Math.PI*.4*t));
+  ev.A.length=0; ev.V.length=0; let t=ts+1.9; while(t<D){ ev.A.push({t}); ev.V.push({t:t+.16}); t+=.8; }
+  S.shocked=true; S.shockT=ts;
+  whiteFlash(420,.95); noiseBurst(); app.classList.remove('jolt'); void app.offsetWidth; app.classList.add('jolt');
+  if(S.snd){ tone(60,.35,'sine',.25); tone(2200,.04,'square',.06); }
+  cells.querySelectorAll('.c').forEach((el,i)=>setTimeout(()=>burstEl(el,12,1.3),i*15));
+  if(byUser){ S.score+=300; updStats(); }
+  setTimeout(()=>{ bigText(byUser?'리듬 회복 · +300':'리듬 회복'); setVitals('nsr'); if(byUser) scorePop(300); sub.innerHTML=byUser?'<b>동율동 회복</b> · 제세동 성공':'<b>동율동 회복</b> · 다음엔 Space로 직접 충격'; },1900);
+  setTimeout(()=>{ charge.className='charge'; S.shock=null; S.shocked=false; next(); },4300);
+}
+function miss(why){
+  S.locked=true; clearInterval(S.timer);
+  S.combo=0; S.wrong++; S.misses.push({r:S.cur,why}); updStats(); sfxBad();
+  app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake');
+  noiseBurst(); alarmStop();
+  cells.querySelectorAll('.c').forEach(el=>burstEl(el,5,.6,true));
+  sub.className='sub bad'; sub.innerHTML=`${esc(why)} → 정답 <b>${S.cur.name}</b> (${S.cur.en}) · ${S.cur.clue}`;
+  if(S.mode==='test'){ cells.innerHTML=[...S.cur.name].map(c=>`<span class="c bad">${esc(c)}</span>`).join(''); }
+  flashMon('bad'); S.i++; showInfo(S.cur); setTimeout(next,S.info?3400:2200);
+}
+function flashMon(k){ flash.className='flash '+k+' show'; requestAnimationFrame(()=>requestAnimationFrame(()=>flash.classList.remove('show'))); }
+
+function endGame(){
+  running=false; clearInterval(S.timer); alarmStop(); S.cur=null; hrEl.textContent='--';
+  const t=S.right+S.wrong, acc=t?Math.round(S.right/t*100):0, rt=S.rts.length? (S.rts.reduce((a,b)=>a+b,0)/S.rts.length):0;
+  $('rScore').textContent=S.score; $('rAcc').textContent=acc+'%'; $('rCombo').textContent=S.best; $('rRt').textContent=rt.toFixed(1)+'s';
+  const missed=new Set(S.misses.map(m=>m.r.id)), whyOf={}; S.misses.forEach(m=>{ if(!whyOf[m.r.id]) whyOf[m.r.id]=m.why; });
+  const list=[...new Set(S.queue.map(r=>r.id))].map(id=>RHYTHMS.find(r=>r.id===id)).sort((a,b)=>(missed.has(b.id)?1:0)-(missed.has(a.id)?1:0));
+  $('missList').innerHTML=(missed.size?'':'<div class="none">전부 맞혔습니다. 제한시간을 줄이거나 범위를 넓혀 보세요.</div>')+list.map(r=>`<div class="m${missed.has(r.id)?' bad':''}"><b>${r.name}<span>${r.en}</span></b><i>${missed.has(r.id)?'✕ '+esc(whyOf[r.id]):'✓'}</i><em>${r.clue}</em>${kn(r)}</div>`).join('');
+  if(S.score>S.bestScore){ S.bestScore=S.score; try{ localStorage.setItem('ecgtype_best',S.score); }catch(e){} $('best').textContent=S.score; }
+  cells.innerHTML=''; sub.textContent=''; hideInfo(); timerBar.style.transform='scaleX(0)';
+  $('endOv').classList.remove('hide');
+}
+[['ctaPdf',LINKS.pdf],['ctaAlert',LINKS.alert]].forEach(([id,u])=>{ const a=$(id); if(u) a.href=u; else a.hidden=true; });
+$('startBtn').addEventListener('click',startGame);
+$('againBtn').addEventListener('click',startGame);
+$('setupBtn').addEventListener('click',()=>{ $('endOv').classList.add('hide'); $('startOv').classList.remove('hide'); });
+addEventListener('keydown',e=>{
+  if((e.code==='Space'||e.key==='Enter') && S.shock==='ready'){ e.preventDefault(); deliverShock(true); return; }
+  if(e.key==='Escape' && !$('libOv').classList.contains('hide')){ $('libOv').classList.add('hide'); return; }
+  if(e.key==='Enter' && e.target!==ime && $('libOv').classList.contains('hide')){ if(!$('startOv').classList.contains('hide')||!$('endOv').classList.contains('hide')) startGame(); } });
+document.addEventListener('click',e=>{ if(running && !e.target.closest('.overlay')) ime.focus(); });
+</script>
+</body>
+</html>
