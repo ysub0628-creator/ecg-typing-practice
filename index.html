@@ -71,6 +71,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 @keyframes bigin{0%{opacity:0;transform:scale(1.6);filter:blur(10px)}18%{opacity:1;transform:scale(1);filter:blur(0)}70%{opacity:1}100%{opacity:0;transform:scale(.96);filter:blur(4px)}}
 .monitor .big.lg{font-size:24px;letter-spacing:.32em;text-shadow:0 0 30px rgba(255,255,255,.8)}
 .monitor .big.hold{opacity:1;animation:pulse .55s steps(2) infinite}
+.monitor .big.num{font-size:96px;font-weight:200;letter-spacing:0;animation:numpop 1s ease-out infinite}
+@keyframes numpop{0%{transform:scale(1.25);opacity:1}70%{transform:scale(1);opacity:1}100%{transform:scale(.95);opacity:.3}}
 /* 심실세동 경보·제세동 */
 .monitor.alarm{border-color:var(--alarm);animation:alarmb .5s steps(2) infinite}
 @keyframes alarmb{50%{box-shadow:0 0 0 1px var(--alarm),0 0 70px rgba(255,74,74,.35),0 40px 90px rgba(0,0,0,.75)}}
@@ -241,6 +243,7 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
       <div class="chips" id="modeChips">
         <button class="chip on" data-mode="learn">학습<small>이름 보고 따라치기</small></button>
         <button class="chip" data-mode="test">시험<small>리듬만 보고 맞히기</small></button>
+        <button class="chip" data-mode="quiz">퀴즈<small>3초 생각 → 타자 (촬영용)</small></button>
       </div>
       <label class="t">시간</label>
       <div class="chips" id="spdChips">
@@ -552,7 +555,7 @@ $('libClose').addEventListener('click',()=>{ $('libOv').classList.add('hide'); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 /* URL 파라미터(촬영용): ?seq=vt,vf,af&mode=test&sec=8&snd=0 */
 const P=new URLSearchParams(location.search);
-if(P.get('mode')){ S.mode=P.get('mode')==='test'?'test':'learn'; $('modeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.mode===S.mode)); }
+if(P.get('mode')){ S.mode=['test','quiz'].includes(P.get('mode'))?P.get('mode'):'learn'; $('modeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.mode===S.mode)); }
 if(P.get('sec')){ S.sec=Math.max(3,+P.get('sec')||10); }
 if(P.get('snd')!==null){ S.snd=+P.get('snd')?1:0; $('sndChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',+c.dataset.snd===S.snd)); }
 if(P.get('info')!==null){ S.info=+P.get('info')?1:0; $('infoChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',+c.dataset.info===S.info)); }
@@ -566,7 +569,7 @@ function startGame(){
     for(let i=1;i<q.length;i++) if(q[i].id===q[i-1].id){ const j=q.findIndex((r,k)=>k>i&&r.id!==q[i-1].id); if(j>0) [q[i],q[j]]=[q[j],q[i]]; }
   }
   Object.assign(S,{queue:q,i:0,score:0,combo:0,best:0,right:0,wrong:0,rts:[],misses:[],locked:false});
-  $('modeTag').textContent=S.mode==='learn'?'Learn':'Test';
+  $('modeTag').textContent={learn:'Learn',test:'Test',quiz:'Quiz'}[S.mode];
   $('startOv').classList.add('hide'); $('endOv').classList.add('hide'); running=true;
   next();
 }
@@ -578,12 +581,21 @@ function next(){
   S.shock=null; S.shocked=false; charge.className='charge'; bigClear(); if(S.cur.id==='vf') alarmStart(); else alarmStop();
   setVitals(S.cur.id);
   ime.value=''; lastLen=0; sub.textContent=''; sub.className='sub'; hideInfo(); render();
-  $('hintBtn').style.visibility=S.mode==='test'?'visible':'hidden';
+  $('hintBtn').style.visibility=S.mode!=='learn'?'visible':'hidden';
   updStats();
+  clearInterval(S.timer); clearTimeout(S.qTO); timerBar.style.transform='scaleX(1)'; timerBar.classList.remove('low');
+  if(S.mode==='quiz') quizCountdown(); else { armTimer(); setTimeout(()=>ime.focus(),0); }
+}
+function armTimer(){
   S.tStart=performance.now();
-  clearInterval(S.timer); timerBar.style.transform='scaleX(1)'; timerBar.classList.remove('low');
   S.timer=setInterval(()=>{ const el=(performance.now()-S.tStart)/1000, left=Math.max(0,1-el/S.sec); timerBar.style.transform=`scaleX(${left})`; timerBar.classList.toggle('low',left<.3); if(left<=0) miss('시간 초과'); },50);
-  setTimeout(()=>ime.focus(),0);
+}
+/* 퀴즈 모드: 리듬만 보여주고 3·2·1 생각할 시간 → 타자 시작 */
+function quizCountdown(){
+  S.locked=true; cells.innerHTML='<span class="ph">이 리듬은? 맞혀보세요</span>'; let n=3;
+  const tick=()=>{ if(n>0){ bigHold(String(n),'num'); if(S.snd) tone(660,.08,'sine',.04); n--; S.qTO=setTimeout(tick,1000); }
+    else { bigClear(); S.locked=false; render(); armTimer(); ime.focus(); } };
+  tick();
 }
 /* 활력징후 패널: 리듬에 맞춰 대충 그럴듯하게 */
 function setVitals(id){ const v=['vf','asys'].includes(id)?['--','--/--','--']: ['vt','tdp','ivr','avb3'].includes(id)?['91','84/52','24']: ['svt','af','afl'].includes(id)?['95','102/64','20']: ['sb','junc','mob2','sa'].includes(id)?['96','96/58','14']: ['98','118/76','16']; $('vSpo2').textContent=v[0]; $('vBp').textContent=v[1]; $('vRr').textContent=v[2]; }
@@ -624,7 +636,7 @@ function onInput(){ if(S.locked||!S.cur) return; render(); if(!composing && S.cu
 ime.addEventListener('keydown',e=>{
   if(S.locked){ e.preventDefault(); return; }
   if(e.key==='Enter'){ e.preventDefault(); if(composing||e.isComposing) return; if(!ime.value.trim()) return; if(S.cur.set.has(norm(ime.value))) correct(); else miss('오답: '+ime.value); }
-  if(e.key==='Tab'){ e.preventDefault(); if(S.mode==='test'){ S.hint=true; render(); } }
+  if(e.key==='Tab'){ e.preventDefault(); if(S.mode!=='learn'){ S.hint=true; render(); } }
   if(e.key==='Escape'){ e.preventDefault(); ime.value=''; render(); }
 });
 $('hintBtn').addEventListener('click',()=>{ S.hint=true; render(); ime.focus(); });
@@ -645,14 +657,14 @@ function correct(){
   app.classList.remove('kick'); void app.offsetWidth; app.classList.add('kick');
   if([3,5,10,15,20].includes(S.combo)) bigText('Combo ×'+S.combo);
   flashMon('ok'); S.i++; showInfo(S.cur);
-  if(S.cur.id==='vf') startShock(); else setTimeout(next, S.info?2400:(S.mode==='learn'?720:1100));
+  if(S.cur.id==='vf') startShock(); else setTimeout(next, S.info?2400:({learn:720,test:1100,quiz:1600}[S.mode]));
 }
 /* ----- 심실세동 돌발 이벤트: 경보 → 정답 → 충전 → Space 충격 → 동율동 회복 ----- */
 const monitor=$('monitor'), charge=$('charge'), chargeTxt=$('chargeTxt'), chargeBar=$('chargeBar');
 function alarmStart(){ alarmStop(); monitor.classList.add('alarm'); S.alarm=setInterval(()=>{ if(S.snd){ tone(1100,.09,'square',.03); tone(1400,.09,'square',.03,.12); } },600); }
 function alarmStop(){ clearInterval(S.alarm); S.alarm=null; monitor.classList.remove('alarm'); }
 function chargeWhine(){ try{ const a=ac(); if(!a) return; const o=a.createOscillator(),gn=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(300,a.currentTime); o.frequency.exponentialRampToValueAtTime(1800,a.currentTime+1.3); gn.gain.setValueAtTime(.03,a.currentTime); gn.gain.linearRampToValueAtTime(.05,a.currentTime+1.3); gn.gain.exponentialRampToValueAtTime(.0001,a.currentTime+1.5); o.connect(gn).connect(a.destination); o.start(); o.stop(a.currentTime+1.55); }catch(e){} }
-function bigHold(t){ big.textContent=t; big.className='big lg hold'; }
+function bigHold(t,cls=''){ big.textContent=t; big.className='big lg hold '+cls; }
 function bigClear(){ big.className='big'; }
 function startShock(){
   alarmStop(); S.shock='charging'; charge.className='charge on'; chargeTxt.textContent='CHARGING · 200 J';
@@ -682,13 +694,13 @@ function miss(why){
   noiseBurst(); alarmStop();
   cells.querySelectorAll('.c').forEach(el=>burstEl(el,5,.6,true));
   sub.className='sub bad'; sub.innerHTML=`${esc(why)} → 정답 <b>${S.cur.name}</b> (${S.cur.en}) · ${S.cur.clue}`;
-  if(S.mode==='test'){ cells.innerHTML=[...S.cur.name].map(c=>`<span class="c bad">${esc(c)}</span>`).join(''); }
+  if(S.mode!=='learn'){ cells.innerHTML=[...S.cur.name].map(c=>`<span class="c bad">${esc(c)}</span>`).join(''); }
   flashMon('bad'); S.i++; showInfo(S.cur); setTimeout(next,S.info?3400:2200);
 }
 function flashMon(k){ flash.className='flash '+k+' show'; requestAnimationFrame(()=>requestAnimationFrame(()=>flash.classList.remove('show'))); }
 
 function endGame(){
-  running=false; clearInterval(S.timer); alarmStop(); S.cur=null; hrEl.textContent='--';
+  running=false; clearInterval(S.timer); clearTimeout(S.qTO); alarmStop(); S.cur=null; hrEl.textContent='--';
   const t=S.right+S.wrong, acc=t?Math.round(S.right/t*100):0, rt=S.rts.length? (S.rts.reduce((a,b)=>a+b,0)/S.rts.length):0;
   $('rScore').textContent=S.score; $('rAcc').textContent=acc+'%'; $('rCombo').textContent=S.best; $('rRt').textContent=rt.toFixed(1)+'s';
   const missed=new Set(S.misses.map(m=>m.r.id)), whyOf={}; S.misses.forEach(m=>{ if(!whyOf[m.r.id]) whyOf[m.r.id]=m.why; });
