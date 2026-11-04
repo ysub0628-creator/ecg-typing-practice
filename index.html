@@ -117,8 +117,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .cta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
 .cta a{display:block;padding:12px 14px;border:1px solid var(--line2);border-radius:12px;color:var(--text);text-decoration:none;font-size:13px;line-height:1.4;background:rgba(255,255,255,.03);transition:all .15s}
 .cta a:hover{border-color:#fff;background:rgba(255,255,255,.07)}
+.cta a.cta-primary{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:600}
+.cta a.cta-primary:hover{background:#ddd}
+.cta a:focus-visible{outline:2px solid var(--trace);outline-offset:3px}
+.cta a small{display:block;margin-top:5px;font-size:11px;font-weight:400;line-height:1.5}
 .cta a[hidden]{display:none}
-@media (max-width:520px){.cta{grid-template-columns:1fr}}
+#endOv{align-items:flex-start}
+#endOv .card{margin:auto 0;flex-shrink:0}
+@media (max-width:520px){.cta{grid-template-columns:1fr}#endOv .card{padding:24px 20px}#endOv .res{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .card .note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6}
 .hintbtn{position:absolute;right:0;top:0;font-size:11px;font-family:var(--mono);letter-spacing:.1em;color:var(--muted);border:1px solid var(--line);padding:6px 10px;border-radius:999px;transition:all .15s}
 .hintbtn:hover{color:var(--text);border-color:var(--line2)}
@@ -278,7 +284,11 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
     </div>
     <h3>이번 라운드 복습 — 오답 먼저</h3>
     <div class="miss" id="missList"></div>
-    <div class="cta"><a id="ctaPdf" target="_blank" rel="noopener">📄 심전도 워크북 무료 미리보기 받기</a><a id="ctaAlert" target="_blank" rel="noopener">🔔 12월 워크북 나오면 알림 받기</a></div>
+    <div class="cta">
+      <a id="ctaPdf" class="cta-primary" target="_blank" rel="noopener">📄 워크북 무료 미리보기 신청<small>이메일 신청 필요 · 발송일 미정<br>신청 폼이 새 창으로 열립니다.</small></a>
+      <a id="ctaAlert" target="_blank" rel="noopener">🔔 워크북 출시 알림 신청 (선택)<small>출시 안내를 받고 싶은 분만 신청해 주세요.<br>신청 폼이 새 창으로 열립니다.</small></a>
+    </div>
+    <p class="note">게임은 신청 없이 무료로 계속 이용할 수 있습니다. 미리보기 신청은 구매가 아니며, 홍보·광고성 이메일 수신 동의는 선택입니다.</p>
     <button class="primary" id="againBtn">같은 설정으로 다시 (Enter)</button>
     <button class="ghost" id="setupBtn">설정 바꾸기</button>
   </div>
@@ -298,7 +308,7 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
 
 <script>
 /* 결과 화면 버튼 링크 — 비워 두면 버튼이 숨겨짐 */
-const LINKS={pdf:'https://forms.gle/mjot2DfdB1kHJN5k9', alert:'https://docs.google.com/forms/d/e/1FAIpQLSdJ6ZKysDJd8IibGJrJ7WgLG5Jl8al4UzSCGzkH7Hcusv_IIg/viewform'};
+const LINKS={pdf:'https://forms.gle/w5kgQQsxosJ1gynu6', alert:'https://forms.gle/T5AVGYFd4qTegWR88'};
 /* ================= 리듬 정의 ================= */
 const RHYTHMS=[
  {id:'nsr', lv:1, name:'정상 동율동', en:'NSR', hr:75, clue:'규칙적 P-QRS-T, 60~100회/분, PR 0.12~0.20초',
