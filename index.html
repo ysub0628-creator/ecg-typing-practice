@@ -95,6 +95,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .typebox{position:relative;min-height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
 .cells{position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:0 1px;font-size:52px;font-weight:500;letter-spacing:-.025em;line-height:1.15;min-height:60px}
 .cells .c{color:rgba(255,255,255,.2);white-space:pre;transition:color .12s}
+.cells .c.slot{display:inline-block;min-width:.6em;border-bottom:2px solid rgba(255,255,255,.22);margin:0 3px;line-height:1}
 .cells .c.ok{color:#fff;text-shadow:0 0 22px rgba(255,255,255,.45)}
 .cells .c.ok.new{animation:popin .22s cubic-bezier(.2,.9,.3,1.4)}
 @keyframes popin{0%{transform:scale(1.5) translateY(-6px);filter:blur(5px);opacity:.3}100%{transform:scale(1) translateY(0);filter:blur(0);opacity:1}}
@@ -243,7 +244,7 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
       <div class="chips" id="modeChips">
         <button class="chip on" data-mode="learn">학습<small>이름 보고 따라치기</small></button>
         <button class="chip" data-mode="test">시험<small>리듬만 보고 맞히기</small></button>
-        <button class="chip" data-mode="quiz">퀴즈<small>3초 생각 → 타자 (촬영용)</small></button>
+        <button class="chip" data-mode="quiz">퀴즈<small>첫 글자만 보고 맞히기 (촬영용)</small></button>
       </div>
       <label class="t">시간</label>
       <div class="chips" id="spdChips">
@@ -584,18 +585,11 @@ function next(){
   $('hintBtn').style.visibility=S.mode!=='learn'?'visible':'hidden';
   updStats();
   clearInterval(S.timer); clearTimeout(S.qTO); timerBar.style.transform='scaleX(1)'; timerBar.classList.remove('low');
-  if(S.mode==='quiz') quizCountdown(); else { armTimer(); setTimeout(()=>ime.focus(),0); }
+  armTimer(); setTimeout(()=>ime.focus(),0);
 }
 function armTimer(){
   S.tStart=performance.now();
   S.timer=setInterval(()=>{ const el=(performance.now()-S.tStart)/1000, left=Math.max(0,1-el/S.sec); timerBar.style.transform=`scaleX(${left})`; timerBar.classList.toggle('low',left<.3); if(left<=0) miss('시간 초과'); },50);
-}
-/* 퀴즈 모드: 리듬만 보여주고 3·2·1 생각할 시간 → 타자 시작 */
-function quizCountdown(){
-  S.locked=true; cells.innerHTML='<span class="ph">이 리듬은? 맞혀보세요</span>'; let n=3;
-  const tick=()=>{ if(n>0){ bigHold(String(n),'num'); if(S.snd) tone(660,.08,'sine',.04); n--; S.qTO=setTimeout(tick,1000); }
-    else { bigClear(); S.locked=false; render(); armTimer(); ime.focus(); } };
-  tick();
 }
 /* 활력징후 패널: 리듬에 맞춰 대충 그럴듯하게 */
 function setVitals(id){ const v=['vf','asys'].includes(id)?['--','--/--','--']: ['vt','tdp','ivr','avb3'].includes(id)?['91','84/52','24']: ['svt','af','afl'].includes(id)?['95','102/64','20']: ['sb','junc','mob2','sa'].includes(id)?['96','96/58','14']: ['98','118/76','16']; $('vSpo2').textContent=v[0]; $('vBp').textContent=v[1]; $('vRr').textContent=v[2]; }
@@ -611,18 +605,20 @@ const esc=s=>s===' '?'&nbsp;':String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&
 function render(){
   const typed=ime.value; const target=S.cur? S.cur.name : ''; let html='';
   const U=[...typed]; const grew=U.length>lastLen; lastLen=U.length;
-  if(S.mode==='learn'){
+  if(S.mode!=='test'){
     const T=[...target];
     for(let i=0;i<Math.max(T.length,U.length);i++){
       const tc=T[i], uc=U[i]; const nw=(grew&&i===U.length-1)?' new':'';
-      if(uc===undefined){ if(i===U.length) html+='<span class="caret"></span>'; html+=`<span class="c">${esc(tc)}</span>`; }
+      /* 퀴즈 모드: 첫 글자와 띄어쓰기만 보이고 나머지는 빈칸 */
+      const ghost=(S.mode==='learn'||i===0||tc===' ')?`<span class="c">${esc(tc)}</span>`:'<span class="c slot">&nbsp;</span>';
+      if(uc===undefined){ if(i===U.length) html+='<span class="caret"></span>'; html+=ghost; }
       else if(tc===undefined) html+=`<span class="c extra">${esc(uc)}</span>`;
       else if(uc===tc) html+=`<span class="c ok${nw}">${esc(uc)}</span>`;
       else if(i===U.length-1&&composing) html+=`<span class="c mid">${esc(uc)}</span>`;
       else html+=`<span class="c bad">${esc(uc)}</span>`;
     }
     if(U.length>=T.length) html+='<span class="caret"></span>';
-    if(S.cur) html+=`<span class="c en">${S.cur.en}</span>`;
+    if(S.cur&&(S.mode==='learn'||S.hint)) html+=`<span class="c en">${S.cur.en}</span>`;
   } else {
     if(!typed) html+='<span class="ph">리듬 이름을 입력하세요</span>';
     else html+=U.map((c,i)=>`<span class="c ok${(grew&&i===U.length-1)?' new':''}">${esc(c)}</span>`).join('');
