@@ -119,9 +119,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .card.lib{max-width:720px}
 .share{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
 .share .ghost{margin-top:0;color:var(--text)}
-#shareImg{display:block;width:180px;margin:10px auto 0;border-radius:10px;border:1px solid var(--line2)}
-#shareImg[hidden]{display:none}
-.cta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+#shareImg{display:block;width:180px;margin:10px auto 0;border-radius:10px;border:1px solid var(--line2)}.cta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
 .cta a{display:block;padding:12px 14px;border:1px solid var(--line2);border-radius:12px;color:var(--text);text-decoration:none;font-size:13px;line-height:1.4;background:rgba(255,255,255,.03);transition:all .15s}
 .cta a:hover{border-color:#fff;background:rgba(255,255,255,.07)}
 .cta a.cta-primary{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:600}
@@ -293,9 +291,7 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
     <h3>이번 라운드 복습 — 오답 먼저</h3>
     <div class="miss" id="missList"></div>
     <div class="share"><button class="ghost" id="shareBtn">📸 결과 이미지 공유 · 저장</button><button class="ghost" id="copyBtn">🔗 링크 복사</button></div>
-    <p class="note" id="shareMsg">폰에서는 공유 창에서 인스타그램 스토리를 고를 수 있어요. PC에서는 이미지가 저장됩니다.</p>
-    <img id="shareImg" alt="내 결과 이미지" hidden>
-    <div class="cta">
+    <p class="note" id="shareMsg">폰에서는 공유 창에서 인스타그램 스토리를 고를 수 있어요. PC에서는 이미지가 저장됩니다.</p>    <div class="cta">
       <a id="ctaPdf" class="cta-primary" target="_blank" rel="noopener">📄 워크북 무료 미리보기 신청<small>이메일 신청 필요 · 발송일 미정<br>신청 폼이 새 창으로 열립니다.</small></a>
       <a id="ctaAlert" target="_blank" rel="noopener">🔔 워크북 출시 알림 신청 (선택)<small>출시 안내를 받고 싶은 분만 신청해 주세요.<br>신청 폼이 새 창으로 열립니다.</small></a>
     </div>
@@ -707,7 +703,7 @@ function endGame(){
   const t=S.right+S.wrong, acc=t?Math.round(S.right/t*100):0, rt=S.rts.length? (S.rts.reduce((a,b)=>a+b,0)/S.rts.length):0;
   $('rScore').textContent=S.score; $('rAcc').textContent=acc+'%'; $('rCombo').textContent=S.best; $('rRt').textContent=rt.toFixed(1)+'s';
   /* 공유 이미지는 미리 만들어 둔다: 버튼 클릭 직후 바로 공유 창을 띄워야 사파리가 막지 않음 */
-  S.shareBlob=null; $('shareImg').hidden=true; $('copyBtn').textContent='🔗 링크 복사';
+  S.shareBlob=null; $('shareImg')?.remove(); $('copyBtn').textContent='🔗 링크 복사';
   buildShare({score:S.score,acc,combo:S.best,rt:rt.toFixed(1),label:`${[...S.lv].sort().map(l=>LV[l]).join('·')} · ${({learn:'학습',test:'시험',quiz:'퀴즈'})[S.mode]} 모드 · ${t}문항`}).then(b=>S.shareBlob=b);
   const missed=new Set(S.misses.map(m=>m.r.id)), whyOf={}; S.misses.forEach(m=>{ if(!whyOf[m.r.id]) whyOf[m.r.id]=m.why; });
   const list=[...new Set(S.queue.map(r=>r.id))].map(id=>RHYTHMS.find(r=>r.id===id)).sort((a,b)=>(missed.has(b.id)?1:0)-(missed.has(a.id)?1:0));
@@ -748,7 +744,7 @@ $('shareBtn').addEventListener('click',async()=>{
   if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],text:`심전도 타자연습 ${$('rScore').textContent}점 — 나도 해보기 ${SITE}`}); return; }catch(e){ if(e.name==='AbortError') return; } }
   // 공유 창이 없는 환경: 저장 시도 + 길게 눌러 저장할 수 있게 이미지를 보여 준다
   const u=URL.createObjectURL(b), a=document.createElement('a'); a.href=u; a.download=f.name; a.click();
-  $('shareImg').src=u; $('shareImg').hidden=false;
+  let im=$('shareImg'); if(!im){ im=document.createElement('img'); im.id='shareImg'; im.alt='내 결과 이미지'; $('shareMsg').after(im); } im.src=u;
   $('shareMsg').textContent='이미지를 저장했어요(안 됐다면 아래 이미지를 길게 눌러 저장). 스토리에 올리고 링크 스티커에 주소를 붙여 보세요.';
 });
 $('copyBtn').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(SITE); $('copyBtn').textContent='✓ 복사됨'; }catch(e){ prompt('주소를 복사하세요',SITE); } });
