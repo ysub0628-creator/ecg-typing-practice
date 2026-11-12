@@ -761,7 +761,7 @@ function endGame(){
   S.shareBlob=null; $('shareImg')?.remove(); $('copyBtn').textContent=t('copy');
   const st={score:S.score,acc,combo:S.best,rt:rt.toFixed(1),label:`${[...S.lv].sort().map(LVN).join('·')} · ${t(S.mode)}${t('modeQ',{n:tot})}`};
   buildShare(st).then(b=>S.shareBlob=b);
-  reportRank(st,tot);
+  reportRank(st,tot); track('end');
   const missed=new Set(S.misses.map(m=>m.r.id)), whyOf={}; S.misses.forEach(m=>{ if(!whyOf[m.r.id]) whyOf[m.r.id]=m.why; });
   const list=[...new Set(S.queue.map(r=>r.id))].map(id=>RHYTHMS.find(r=>r.id===id)).sort((a,b)=>(missed.has(b.id)?1:0)-(missed.has(a.id)?1:0));
   $('missList').innerHTML=(missed.size?'':`<div class="none">${t('allOk')}</div>`)+list.map(r=>`<div class="m${missed.has(r.id)?' bad':''}"><b>${r.name}<span>${r.en}</span></b><i>${missed.has(r.id)?'✕ '+esc(whyOf[r.id]):'✓'}</i><em>${r.clue}</em>${kn(r)}</div>`).join('');
@@ -785,7 +785,9 @@ async function reportRank(st,n){
     buildShare(st).then(b=>S.shareBlob=b);
   }catch(e){ rank.classList.remove('on'); }
 }
-[['ctaPdf',LINKS.pdf],['ctaAlert',LINKS.alert]].forEach(([id,u])=>{ const a=$(id); if(u) a.href=u; else a.hidden=true; });
+/* 버튼 클릭률: 결과화면 도달(end) 대비 신청/공유 클릭 수를 시트 '이벤트'에 적는다. 개인정보 없음 */
+function track(n){ if(!STATS_URL||SEQ.length) return; try{ fetch(STATS_URL,{method:'POST',keepalive:true,body:JSON.stringify({t:'ev',n,m:S.mode,lang:S.lang||'ko'})}).catch(()=>{}); }catch(e){} }
+[['ctaPdf',LINKS.pdf],['ctaAlert',LINKS.alert]].forEach(([id,u])=>{ const a=$(id); if(u) a.href=u; else a.hidden=true; a.addEventListener('click',()=>track(id==='ctaPdf'?'pdf':'alert')); });
 $('startBtn').addEventListener('click',startGame);
 /* ----- 결과 공유: 9:16 이미지 → 공유 시트(모바일) 또는 저장(PC) ----- */
 const SITE=location.protocol.startsWith('http')?location.origin+location.pathname:'https://ysub0628-creator.github.io/ecg-typing-practice/';
@@ -812,7 +814,7 @@ function buildShare(st){
   return new Promise(r=>c.toBlob(r,'image/png'));
 }
 $('shareBtn').addEventListener('click',async()=>{
-  const b=S.shareBlob; if(!b) return;
+  const b=S.shareBlob; if(!b) return; track('share');
   const f=new File([b],'ecg-typing-result.png',{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],text:t('shareTxt',{s:$('rScore').textContent,u:SITE})}); return; }catch(e){ if(e.name==='AbortError') return; } }
   // 공유 창이 없는 환경: 저장 시도 + 길게 눌러 저장할 수 있게 이미지를 보여 준다
