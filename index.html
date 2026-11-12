@@ -178,6 +178,9 @@ html[lang=en] .cells{font-size:40px}
 .res div{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:16px 10px 12px;text-align:center}
 .res b{display:block;font-family:var(--mono);font-size:30px;font-weight:200;letter-spacing:-.03em;margin-bottom:6px}
 .res span{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.rank{display:none;text-align:center;border:1px solid var(--line);border-radius:14px;padding:18px 10px 14px;margin:-10px 0 22px;background:rgba(57,255,138,.04)}
+.rank.on{display:block}.rank small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.rank b{display:block;font-family:var(--mono);font-size:52px;font-weight:200;letter-spacing:-.03em;color:var(--trace);line-height:1}.rank em{display:block;font-style:normal;font-size:13px;color:#bdbdbd;margin-top:8px}
 .miss{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:14px}
 .miss .m{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
 .miss .m:last-child{border-bottom:0}
@@ -294,6 +297,7 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
       <div><b id="rCombo">0</b><span data-en="Best combo">최고 콤보</span></div>
       <div><b id="rRt">0.0s</b><span data-en="Avg reaction">평균 반응</span></div>
     </div>
+    <div class="rank" id="rank"><small data-en="Your rank among all players">전체 플레이어 중 내 위치</small><b id="rankPct">—</b><em id="rankNote"></em></div>
     <h3 data-en="Review this round — misses first">이번 라운드 복습 — 오답 먼저</h3>
     <div class="miss" id="missList"></div>
     <div class="share"><button class="ghost" id="shareBtn" data-en="📸 Share · save result image">📸 결과 이미지 공유 · 저장</button><button class="ghost" id="copyBtn" data-en="🔗 Copy link">🔗 링크 복사</button></div>
@@ -322,6 +326,8 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
 <script>
 /* 결과 화면 버튼 링크 — 비워 두면 버튼이 숨겨짐 */
 const LINKS={pdf:'https://forms.gle/w5kgQQsxosJ1gynu6', alert:'https://forms.gle/T5AVGYFd4qTegWR88'};
+/* 상위 % 집계 서버(순위서버_AppsScript.gs 웹 앱 URL) — 비워 두면 순위 칸이 숨겨짐 */
+const STATS_URL='https://script.google.com/macros/s/AKfycbyt7tWEzs6NRsQqh9sbDSDNosyzuN6qLO8gJYcaBpebDZhSQV150su9ZrhljmvPdPLbGQ/exec';
 /* ================= 리듬 정의 ================= */
 const RHYTHMS=[
  {id:'nsr', lv:1, name:'정상 동율동', en:'NSR', hr:75, clue:'규칙적 P-QRS-T, 60~100회/분, PR 0.12~0.20초',
@@ -582,7 +588,8 @@ const T={timeout:['시간 초과','Time out'],wrong:['오답: ','Wrong: '],ph:['
  recov:['리듬 회복','Rhythm restored'],recovUser:['<b>동율동 회복</b> · 제세동 성공','<b>Sinus rhythm restored</b> · shock successful'],recovAuto:['<b>동율동 회복</b> · 다음엔 Space로 직접 충격','<b>Sinus rhythm restored</b> · next time press Space yourself'],
  allOk:['전부 맞혔습니다. 제한시간을 줄이거나 범위를 넓혀 보세요.','All correct. Try a shorter time limit or a wider range.'],copy:['🔗 링크 복사','🔗 Copy link'],copied:['✓ 복사됨','✓ Copied'],copyPrompt:['주소를 복사하세요','Copy this address'],
  title:['심전도 타자연습','ECG Rhythm Typing'],acc:['정확도','Accuracy'],combo:['최고 콤보','Best combo'],rt:['평균 반응','Avg reaction'],tryMe:['나도 해보기 →','Try it yourself →'],
- shareTxt:['심전도 타자연습 {s}점 — 나도 해보기 {u}','ECG Rhythm Typing: {s} points — try it {u}'],imgAlt:['내 결과 이미지','My result image'],
+ shareTxt:['심전도 타자연습 {s}점 — 나도 해보기 {u}','ECG Rhythm Typing: {s} points — try it {u}'],
+ ranking:['집계 중…','Calculating…'],rankNote:['상위 {top}% · 같은 설정({m}·{s}초)으로 끝낸 {n}판 기준','Top {top}% of {n} rounds with the same settings ({m} · {s} s)'],rankTxt:['전체 상위 {top}% · ','Top {top}% overall · '],few:[' · 아직 초기 집계',' · early data'],imgAlt:['내 결과 이미지','My result image'],
  saved:['이미지를 저장했어요(안 됐다면 아래 이미지를 길게 눌러 저장). 스토리에 올리고 링크 스티커에 주소를 붙여 보세요.','Image saved (if not, long-press the image below to save). Post it to your story and add the link sticker.']};
 const t=(k,v={})=>T[k][S.lang==='en'?1:0].replace(/\{(\w+)\}/g,(_,n)=>v[n]);
 const LVN=l=>t('lv'+l);
@@ -752,13 +759,31 @@ function endGame(){
   $('rScore').textContent=S.score; $('rAcc').textContent=acc+'%'; $('rCombo').textContent=S.best; $('rRt').textContent=rt.toFixed(1)+'s';
   /* 공유 이미지는 미리 만들어 둔다: 버튼 클릭 직후 바로 공유 창을 띄워야 사파리가 막지 않음 */
   S.shareBlob=null; $('shareImg')?.remove(); $('copyBtn').textContent=t('copy');
-  buildShare({score:S.score,acc,combo:S.best,rt:rt.toFixed(1),label:`${[...S.lv].sort().map(LVN).join('·')} · ${t(S.mode)}${t('modeQ',{n:tot})}`}).then(b=>S.shareBlob=b);
+  const st={score:S.score,acc,combo:S.best,rt:rt.toFixed(1),label:`${[...S.lv].sort().map(LVN).join('·')} · ${t(S.mode)}${t('modeQ',{n:tot})}`};
+  buildShare(st).then(b=>S.shareBlob=b);
+  reportRank(st,tot);
   const missed=new Set(S.misses.map(m=>m.r.id)), whyOf={}; S.misses.forEach(m=>{ if(!whyOf[m.r.id]) whyOf[m.r.id]=m.why; });
   const list=[...new Set(S.queue.map(r=>r.id))].map(id=>RHYTHMS.find(r=>r.id===id)).sort((a,b)=>(missed.has(b.id)?1:0)-(missed.has(a.id)?1:0));
   $('missList').innerHTML=(missed.size?'':`<div class="none">${t('allOk')}</div>`)+list.map(r=>`<div class="m${missed.has(r.id)?' bad':''}"><b>${r.name}<span>${r.en}</span></b><i>${missed.has(r.id)?'✕ '+esc(whyOf[r.id]):'✓'}</i><em>${r.clue}</em>${kn(r)}</div>`).join('');
   if(S.score>S.bestScore){ S.bestScore=S.score; try{ localStorage.setItem('ecgtype_best',S.score); }catch(e){} $('best').textContent=S.score; }
   cells.innerHTML=''; sub.textContent=''; hideInfo(); timerBar.style.transform='scaleX(0)';
   $('endOv').classList.remove('hide');
+}
+/* ----- 상위 %: 같은 모드·제한시간 버킷에서 문항당 점수로 비교. 촬영용 seq 라운드와 5문항 미만은 집계 안 함 ----- */
+const rank=$('rank'), rankPct=$('rankPct'), rankNote=$('rankNote');
+async function reportRank(st,n){
+  rank.classList.remove('on'); S.rank=null;
+  if(!STATS_URL||SEQ.length||n<5) return;
+  rank.classList.add('on'); rankPct.textContent='…'; rankNote.textContent=t('ranking');
+  try{
+    const k=`${S.mode}|${S.sec}`, v=Math.round(st.score/n*10)/10;
+    const res=await fetch(STATS_URL,{method:'POST',body:JSON.stringify({k,v,score:st.score,n,acc:st.acc,lang:S.lang||'ko'})});
+    const d=await res.json(); if(!d||!d.top) throw 0;
+    S.rank=d.top; rankNote.textContent=t('rankNote',{top:d.top,n:d.n,m:t(S.mode),s:S.sec})+(d.n<20?t('few'):'');
+    /* 99%에서 내 숫자까지 내려오는 공개 연출 */
+    const t0=performance.now(), from=99; (function step(){ const p=Math.min(1,(performance.now()-t0)/1400), e=1-Math.pow(1-p,3); rankPct.textContent=Math.round(from+(d.top-from)*e)+'%'; if(p<1) requestAnimationFrame(step); })();
+    buildShare(st).then(b=>S.shareBlob=b);
+  }catch(e){ rank.classList.remove('on'); }
 }
 [['ctaPdf',LINKS.pdf],['ctaAlert',LINKS.alert]].forEach(([id,u])=>{ const a=$(id); if(u) a.href=u; else a.hidden=true; });
 $('startBtn').addEventListener('click',startGame);
@@ -781,7 +806,7 @@ function buildShare(st){
   x.fillStyle='#8e8e8e'; x.font=M(400,30); x.fillText('S C O R E',540,990);
   x.fillStyle='#39ff8a'; x.font=M(200,230); x.fillText(String(st.score),540,1200);
   [[t('acc'),st.acc+'%'],[t('combo'),String(st.combo)],[t('rt'),st.rt+'s']].forEach(([k,v],i)=>{ const px=220+i*320; x.fillStyle='#f4f4f4'; x.font=M(300,72); x.fillText(v,px,1380); x.fillStyle='#8e8e8e'; x.font=F(400,30); x.fillText(k,px,1432); });
-  x.fillStyle='#bdbdbd'; x.font=F(400,34); x.fillText(st.label,540,1530);
+  x.fillStyle='#bdbdbd'; x.font=F(400,34); x.fillText((S.rank?t('rankTxt',{top:S.rank}):'')+st.label,540,1530);
   x.fillStyle='#f4f4f4'; x.font=F(600,40); x.fillText(t('tryMe'),540,1660);
   x.fillStyle='#39ff8a'; x.font=M(400,30); x.fillText(SITE.replace(/^https?:\/\//,'').replace(/\/$/,''),540,1712);
   return new Promise(r=>c.toBlob(r,'image/png'));
