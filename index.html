@@ -732,7 +732,7 @@ function deliverShock(byUser){
   charge.className='charge on'; chargeTxt.textContent=byUser?'SHOCK DELIVERED':'SHOCK · AUTO'; bigClear();
   const ts=performance.now()/1000-t0, vfc=ev.cont||(()=>0);
   ev.cont=t=> t<ts? vfc(t) : (t<ts+.14 ? 3.2*Math.sin((t-ts)/.14*Math.PI) : .01*Math.sin(2*Math.PI*.4*t));
-  ev.A.length=0; ev.V.length=0; let t=ts+1.9; while(t<D){ ev.A.push({t}); ev.V.push({t:t+.16}); t+=.8; }
+  ev.A.length=0; ev.V.length=0; let tb=ts+1.9; while(tb<D){ ev.A.push({t:tb}); ev.V.push({t:tb+.16}); tb+=.8; } /* 지역변수 t가 문구 함수 t()를 가리지 않게 */
   S.shocked=true; S.shockT=ts;
   whiteFlash(420,.95); noiseBurst(); app.classList.remove('jolt'); void app.offsetWidth; app.classList.add('jolt');
   if(S.snd){ tone(60,.35,'sine',.25); tone(2200,.04,'square',.06); }
