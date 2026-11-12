@@ -127,6 +127,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .cta a:focus-visible{outline:2px solid var(--trace);outline-offset:3px}
 .cta a small{display:block;margin-top:5px;font-size:11px;font-weight:400;line-height:1.5}
 .cta a[hidden]{display:none}
+.eyebrow.row{display:flex;justify-content:space-between;align-items:center}
+.chip.mini{padding:4px 10px;font-size:12px;letter-spacing:.1em}
+.primary.big{margin-top:22px;padding:19px;font-size:17px}.primary.big small{font-weight:400;opacity:.6;font-size:14px}
+.links{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 14px;margin-top:16px;font-size:13px;color:var(--muted)}.links span{opacity:.35}
+.lnk{white-space:nowrap;background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;font-size:13px;cursor:pointer;font-family:inherit}.lnk:hover{color:var(--text)}
+.opt.more{display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}.opt.more.open{display:grid}
+a.primary.go{display:block;text-align:center;text-decoration:none;margin-top:0;background:var(--trace)}a.primary.go:hover{background:#6dffa8}a.primary.go small{display:block;font-weight:400;font-size:12px;opacity:.7;margin-top:4px}a.primary.go[hidden]{display:none}
+.review{margin-top:16px}.review summary{cursor:pointer;color:var(--muted);font-size:14px;padding:8px 0;list-style:none}.review summary::before{content:'▸ ';}.review[open] summary::before{content:'▾ '}.review summary b{color:var(--text)}
 #endOv{align-items:flex-start}
 #endOv .card{margin:auto 0;flex-shrink:0}
 @media (max-width:520px){.cta{grid-template-columns:1fr}#endOv .card{padding:24px 20px}#endOv .res{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -232,14 +240,20 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
   <div class="kb" id="kb"></div>
 </div>
 
-<!-- 시작 화면 -->
+<!-- 시작 화면: 결정은 모드 하나, 나머지는 세부 설정 안 -->
 <div class="overlay" id="startOv">
   <div class="card">
-    <div class="eyebrow">ECG · Lead II · Typing drill</div>
+    <div class="eyebrow row">ECG · Lead II · Typing drill <button class="chip mini" id="langBtn" type="button">EN</button></div>
     <h1 data-en="ECG Rhythm Typing">심전도 타자연습</h1>
-    <p class="lead" data-en="You know the shape but the name won't come. Learn rhythms with your hands, not just your eyes.<br>Type the name of the rhythm on the monitor. Full names and abbreviations (VF, AF, SVT…) both count.">모양은 아는데 이름이 안 나온 적 있죠. 리듬을 눈 말고 손으로 외웁니다.<br>모니터에 흐르는 리듬의 이름을 치세요. 한글 이름과 영문 약어(VF, AF, SVT…) 모두 정답입니다.</p>
-
-    <div class="opt">
+    <p class="lead" data-en="You know the shape but the name won't come. Learn rhythms with your hands, not just your eyes.">모양은 아는데 이름이 안 나온 적 있죠. 리듬을 눈 말고 손으로 외웁니다.</p>
+    <div class="chips" id="modeChips" style="margin-top:18px">
+      <button class="chip on" data-mode="learn" data-en="Learn<small>copy the name shown</small>">학습<small>이름 보고 따라치기</small></button>
+      <button class="chip" data-mode="test" data-en="Test<small>rhythm only, no name</small>">시험<small>리듬만 보고 맞히기</small></button>
+      <button class="chip" data-mode="quiz" data-en="Quiz<small>first letter only</small>">퀴즈<small>첫 글자만 보고 맞히기</small></button>
+    </div>
+    <button class="primary big" id="startBtn"><span data-en="Start">시작</span> <small id="startHint"></small></button>
+    <div class="links"><button class="lnk" id="moreBtn" type="button" data-en="Settings ▾">세부 설정 ▾</button><span>·</span><button class="lnk" id="libBtn" type="button" data-en="Rhythm library">리듬 사전</button></div>
+    <div class="opt more" id="more">
       <label class="t">Language</label>
       <div class="chips" id="langChips">
         <button class="chip on" data-lang="ko">한국어</button>
@@ -248,14 +262,8 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
       <label class="t" data-en="Range">범위</label>
       <div class="chips" id="lvChips">
         <button class="chip on" data-lv="1" data-en="Basic<small>NSR·AF·VT·VF·PVC…</small>">기초<small>동율동·AF·VT·VF·PVC…</small></button>
-        <button class="chip on" data-lv="2" data-en="Intermediate<small>AV blocks·flutter·SVT</small>">중급<small>방실차단·조동·SVT</small></button>
+        <button class="chip" data-lv="2" data-en="Intermediate<small>AV blocks·flutter·SVT</small>">중급<small>방실차단·조동·SVT</small></button>
         <button class="chip" data-lv="3" data-en="Advanced<small>TdP·junctional·paced…</small>">고급<small>토르사드·접합부·조율기…</small></button>
-      </div>
-      <label class="t" data-en="Mode">모드</label>
-      <div class="chips" id="modeChips">
-        <button class="chip on" data-mode="learn" data-en="Learn<small>copy the name shown</small>">학습<small>이름 보고 따라치기</small></button>
-        <button class="chip" data-mode="test" data-en="Test<small>rhythm only, no name</small>">시험<small>리듬만 보고 맞히기</small></button>
-        <button class="chip" data-mode="quiz" data-en="Quiz<small>first letter only</small>">퀴즈<small>첫 글자만 보고 맞히기</small></button>
       </div>
       <label class="t" data-en="Time">시간</label>
       <div class="chips" id="spdChips">
@@ -265,7 +273,8 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
       </div>
       <label class="t" data-en="Questions">문항</label>
       <div class="chips" id="cntChips">
-        <button class="chip on" data-cnt="10">10</button>
+        <button class="chip on" data-cnt="7">7</button>
+        <button class="chip" data-cnt="10">10</button>
         <button class="chip" data-cnt="20">20</button>
         <button class="chip" data-cnt="0" data-en="All">전체</button>
       </div>
@@ -280,13 +289,11 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
         <button class="chip" data-info="0" data-en="None<small>fast, no explanation</small>">없음<small>설명 없이 빠르게</small></button>
       </div>
     </div>
-    <button class="primary" id="startBtn" data-en="Start (Enter)">시작 (Enter)</button>
-    <button class="ghost" id="libBtn" data-en="Rhythm library — 20 rhythms, facts & nursing">리듬 사전 — 20개 설명·간호 중재 보기</button>
-    <div class="foot" data-en="Answers are accepted as soon as you finish typing, no <kbd>Enter</kbd> · In test mode <kbd>Tab</kbd> shows the abbreviation (half points)<br>When VF appears, type the name, then press <kbd>Space</kbd> to defibrillate (+300)<br>Best score <b id=&quot;best&quot;>0</b>">정답은 <kbd>Enter</kbd> 없이 다 치면 자동 인정 · 시험 모드에서 <kbd>Tab</kbd>은 영문 약어 힌트 (점수 절반)<br>심실세동이 뜨면 이름을 친 뒤 <kbd>Space</kbd>로 제세동 (+300)<br>최고 점수 <b id="best">0</b></div>
+    <b id="best" hidden>0</b>
   </div>
 </div>
 
-<!-- 결과 화면 -->
+<!-- 결과 화면: 순위 바로 아래 신청 버튼 하나 -->
 <div class="overlay hide" id="endOv">
   <div class="card">
     <div class="eyebrow">Result</div>
@@ -298,16 +305,12 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
       <div><b id="rRt">0.0s</b><span data-en="Avg reaction">평균 반응</span></div>
     </div>
     <div class="rank" id="rank"><small data-en="Your rank among all players">전체 플레이어 중 내 위치</small><b id="rankPct">—</b><em id="rankNote"></em></div>
-    <h3 data-en="Review this round — misses first">이번 라운드 복습 — 오답 먼저</h3>
-    <div class="miss" id="missList"></div>
-    <div class="share"><button class="ghost" id="shareBtn" data-en="📸 Share · save result image">📸 결과 이미지 공유 · 저장</button><button class="ghost" id="copyBtn" data-en="🔗 Copy link">🔗 링크 복사</button></div>
-    <p class="note" id="shareMsg" data-en="On a phone you can pick Instagram Stories from the share sheet. On a PC the image is saved.">폰에서는 공유 창에서 인스타그램 스토리를 고를 수 있어요. PC에서는 이미지가 저장됩니다.</p>    <div class="cta">
-      <a id="ctaPdf" class="cta-primary" target="_blank" rel="noopener" data-en="📄 Request the free workbook preview<small>Email sign-up · send date TBD · Korean-language workbook<br>The form opens in a new window.</small>">📄 워크북 무료 미리보기 신청<small>이메일 신청 필요 · 발송일 미정<br>신청 폼이 새 창으로 열립니다.</small></a>
-      <a id="ctaAlert" target="_blank" rel="noopener" data-en="🔔 Workbook launch alert (optional)<small>Only if you want to hear when it launches.<br>The form opens in a new window.</small>">🔔 워크북 출시 알림 신청 (선택)<small>출시 안내를 받고 싶은 분만 신청해 주세요.<br>신청 폼이 새 창으로 열립니다.</small></a>
-    </div>
+    <a id="ctaPdf" class="primary go" target="_blank" rel="noopener" data-en="📄 Get the ECG workbook preview, free<small>Just an email · not a purchase · Korean-language workbook</small>">📄 심전도 워크북 미리보기 무료로 받기<small>이메일만 남기면 발송 · 구매 아님</small></a>
+    <div class="share"><button class="ghost" id="againBtn" data-en="↻ Play again">↻ 다시 하기</button><button class="ghost" id="shareBtn" data-en="📸 Share result">📸 결과 공유</button></div>
+    <p class="note" id="shareMsg" data-en="On a phone, pick Instagram Stories from the share sheet. On a PC the image is saved.">폰에서는 공유 창에서 인스타그램 스토리를 고를 수 있어요. PC에서는 이미지가 저장됩니다.</p>
+    <details class="review"><summary><span data-en="Review this round — ">이번 라운드 복습 — </span><b id="missN">0</b><span data-en=" misses first"> 오답 먼저</span></summary><div class="miss" id="missList"></div></details>
+    <div class="links"><a id="ctaAlert" class="lnk" target="_blank" rel="noopener" data-en="🔔 Launch alert only">🔔 출시 알림만 받기</a><span>·</span><button class="lnk" id="setupBtn" type="button" data-en="Change settings">설정 바꾸기</button><span>·</span><button class="lnk" id="copyBtn" type="button" data-en="🔗 Copy link">🔗 링크 복사</button></div>
     <p class="note" data-en="The game stays free without signing up. The preview request is not a purchase, and consent to marketing email is optional.">게임은 신청 없이 무료로 계속 이용할 수 있습니다. 미리보기 신청은 구매가 아니며, 홍보·광고성 이메일 수신 동의는 선택입니다.</p>
-    <button class="primary" id="againBtn" data-en="Again, same settings (Enter)">같은 설정으로 다시 (Enter)</button>
-    <button class="ghost" id="setupBtn" data-en="Change settings">설정 바꾸기</button>
   </div>
 </div>
 
@@ -569,12 +572,12 @@ const keyOn=(code,on)=>{ const k=kbEl.querySelector(`[data-code="${code}"]`)||(c
 addEventListener('keydown',e=>keyOn(e.code,true)); addEventListener('keyup',e=>keyOn(e.code,false));
 
 /* ================= 게임 상태 ================= */
-const S={lv:new Set([1,2]),mode:'learn',sec:10,cnt:10,snd:1,info:1,queue:[],cur:null,i:0,score:0,combo:0,best:0,right:0,wrong:0,rts:[],misses:[],hint:false,tStart:0,timer:null,locked:false,bestScore:0};
+const S={lv:new Set([1]),mode:'learn',sec:10,cnt:7,snd:1,info:1,queue:[],cur:null,i:0,score:0,combo:0,best:0,right:0,wrong:0,rts:[],misses:[],hint:false,tStart:0,timer:null,locked:false,bestScore:0};
 const $=id=>document.getElementById(id);
 const ime=$('ime'), cells=$('cells'), sub=$('sub'), typebox=$('typebox'), timerBar=$('timerBar'), flash=$('flash'), app=$('app'), big=$('big');
 try{ S.bestScore=+localStorage.getItem('ecgtype_best')||0; }catch(e){} $('best').textContent=S.bestScore;
 
-function chips(id,onSel,multi){ $(id).addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b) return; if(multi){ b.classList.toggle('on'); if(!$(id).querySelector('.chip.on')) b.classList.add('on'); } else { $(id).querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); b.classList.add('on'); } onSel(); }); }
+function chips(id,onSel,multi){ $(id).addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b) return; if(multi){ b.classList.toggle('on'); if(!$(id).querySelector('.chip.on')) b.classList.add('on'); } else { $(id).querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); b.classList.add('on'); } onSel(); updStartHint(); }); }
 chips('lvChips',()=>{ S.lv=new Set([...$('lvChips').querySelectorAll('.chip.on')].map(c=>+c.dataset.lv)); },true);
 chips('modeChips',()=>{ S.mode=$('modeChips').querySelector('.chip.on').dataset.mode; });
 chips('spdChips',()=>{ S.sec=+$('spdChips').querySelector('.chip.on').dataset.sec; });
@@ -589,17 +592,21 @@ const T={timeout:['시간 초과','Time out'],wrong:['오답: ','Wrong: '],ph:['
  allOk:['전부 맞혔습니다. 제한시간을 줄이거나 범위를 넓혀 보세요.','All correct. Try a shorter time limit or a wider range.'],copy:['🔗 링크 복사','🔗 Copy link'],copied:['✓ 복사됨','✓ Copied'],copyPrompt:['주소를 복사하세요','Copy this address'],
  title:['심전도 타자연습','ECG Rhythm Typing'],acc:['정확도','Accuracy'],combo:['최고 콤보','Best combo'],rt:['평균 반응','Avg reaction'],tryMe:['나도 해보기 →','Try it yourself →'],
  shareTxt:['심전도 타자연습 {s}점 — 나도 해보기 {u}','ECG Rhythm Typing: {s} points — try it {u}'],
- ranking:['집계 중…','Calculating…'],rankNote:['상위 {top}% · 같은 설정({m}·{s}초)으로 끝낸 {n}판 기준','Top {top}% of {n} rounds with the same settings ({m} · {s} s)'],rankTxt:['전체 상위 {top}% · ','Top {top}% overall · '],few:[' · 아직 초기 집계',' · early data'],imgAlt:['내 결과 이미지','My result image'],
+ ranking:['집계 중…','Calculating…'],rankNote:['상위 {top}% · 같은 설정({m}·{s}초)으로 끝낸 {n}판 기준','Top {top}% of {n} rounds with the same settings ({m} · {s} s)'],rankTxt:['전체 상위 {top}% · ','Top {top}% overall · '],few:[' · 아직 초기 집계',' · early data'],startHint:['· {lv} {n}문항 · 약 {m}분','· {lv} · {n} questions · ~{m} min'],allQ:['전체','all'],more:['세부 설정 ▾','Settings ▾'],less:['세부 설정 ▴','Settings ▴'],imgAlt:['내 결과 이미지','My result image'],
  saved:['이미지를 저장했어요(안 됐다면 아래 이미지를 길게 눌러 저장). 스토리에 올리고 링크 스티커에 주소를 붙여 보세요.','Image saved (if not, long-press the image below to save). Post it to your story and add the link sticker.']};
 const t=(k,v={})=>T[k][S.lang==='en'?1:0].replace(/\{(\w+)\}/g,(_,n)=>v[n]);
 const LVN=l=>t('lv'+l);
 function setLang(l){
   S.lang=l; document.documentElement.lang=l; try{ localStorage.setItem('ecgtype_lang',l); }catch(e){}
   document.querySelectorAll('[data-en]').forEach(el=>{ if(el.dataset.ko===undefined) el.dataset.ko=el.innerHTML; el.innerHTML=l==='en'?el.dataset.en:el.dataset.ko; });
-  $('best').textContent=S.bestScore; $('langChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.lang===l));
+  $('best').textContent=S.bestScore; $('langBtn').textContent=l==='en'?'한국어':'EN'; updStartHint(); $('langChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.lang===l));
   RHYTHMS.forEach(r=>Object.assign(r,l==='en'?r.EN:r.KO)); buildLib();
 }
 chips('langChips',()=>{ setLang($('langChips').querySelector('.chip.on').dataset.lang); });
+/* 시작 버튼 안 요약: 범위 · 문항 · 예상 시간 */
+function updStartHint(){ if(typeof t!=='function') return; const n=S.cnt||RHYTHMS.filter(r=>S.lv.has(r.lv)).length, m=Math.max(1,Math.round(n*(S.sec*.6+(S.info?2.4:.9))/60)); $('startHint').textContent=t('startHint',{lv:[...S.lv].sort().map(LVN).join('·'),n,m}); }
+$('langBtn').addEventListener('click',()=>setLang(S.lang==='en'?'ko':'en'));
+$('moreBtn').addEventListener('click',()=>{ const o=$('more').classList.toggle('open'); $('moreBtn').textContent=t(o?'less':'more'); });
 const info=$('info');
 const kn=r=>`<div class="kn"><em>${t('know')}</em><div>${r.know||''}</div><em>${t('nurse')}</em><div>${r.nurse||''}</div></div>`;
 function showInfo(r){ if(!S.info||!r) return; info.innerHTML=`<em>${t('know')}</em><div>${r.know||''}</div><em>${t('nurse')}</em><div>${r.nurse||''}</div>`; info.classList.add('on'); }
@@ -614,6 +621,7 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 /* URL 파라미터(촬영용): ?seq=vt,vf,af&mode=test&sec=8&snd=0 */
 const P=new URLSearchParams(location.search);
 { let l=P.get('lang'); if(!l){ try{ l=localStorage.getItem('ecgtype_lang'); }catch(e){} } if(l==='en') setLang('en'); else S.lang='ko'; }
+updStartHint();
 if(P.get('mode')){ S.mode=['test','quiz'].includes(P.get('mode'))?P.get('mode'):'learn'; $('modeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.mode===S.mode)); }
 if(P.get('sec')){ S.sec=Math.max(3,+P.get('sec')||10); }
 if(P.get('snd')!==null){ S.snd=+P.get('snd')?1:0; $('sndChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',+c.dataset.snd===S.snd)); }
@@ -629,7 +637,7 @@ function startGame(){
   }
   Object.assign(S,{queue:q,i:0,score:0,combo:0,best:0,right:0,wrong:0,rts:[],misses:[],locked:false});
   $('modeTag').textContent={learn:'Learn',test:'Test',quiz:'Quiz'}[S.mode];
-  $('startOv').classList.add('hide'); $('endOv').classList.add('hide'); running=true;
+  $('startOv').classList.add('hide'); $('endOv').classList.add('hide'); running=true; track('start');
   next();
 }
 let lastLen=0;
@@ -764,7 +772,7 @@ function endGame(){
   reportRank(st,tot); track('end');
   const missed=new Set(S.misses.map(m=>m.r.id)), whyOf={}; S.misses.forEach(m=>{ if(!whyOf[m.r.id]) whyOf[m.r.id]=m.why; });
   const list=[...new Set(S.queue.map(r=>r.id))].map(id=>RHYTHMS.find(r=>r.id===id)).sort((a,b)=>(missed.has(b.id)?1:0)-(missed.has(a.id)?1:0));
-  $('missList').innerHTML=(missed.size?'':`<div class="none">${t('allOk')}</div>`)+list.map(r=>`<div class="m${missed.has(r.id)?' bad':''}"><b>${r.name}<span>${r.en}</span></b><i>${missed.has(r.id)?'✕ '+esc(whyOf[r.id]):'✓'}</i><em>${r.clue}</em>${kn(r)}</div>`).join('');
+  $('missN').textContent=missed.size; $('missList').innerHTML=(missed.size?'':`<div class="none">${t('allOk')}</div>`)+list.map(r=>`<div class="m${missed.has(r.id)?' bad':''}"><b>${r.name}<span>${r.en}</span></b><i>${missed.has(r.id)?'✕ '+esc(whyOf[r.id]):'✓'}</i><em>${r.clue}</em>${kn(r)}</div>`).join('');
   if(S.score>S.bestScore){ S.bestScore=S.score; try{ localStorage.setItem('ecgtype_best',S.score); }catch(e){} $('best').textContent=S.score; }
   cells.innerHTML=''; sub.textContent=''; hideInfo(); timerBar.style.transform='scaleX(0)';
   $('endOv').classList.remove('hide');
