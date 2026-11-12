@@ -146,6 +146,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .kb .k.w{width:84px} .kb .k.sp{width:310px}
 .kb .k.on{background:#f4f4f4;border-color:#fff;transform:translateY(2px);box-shadow:0 0 28px rgba(255,255,255,.35)}
 .kb .k.on em,.kb .k.on small{color:#050505}
+html[lang=en] .cells{font-size:40px}
 @media (max-width:720px){.kb{display:none}.vitals{display:none}.cells{font-size:36px}.monitor .hr b{font-size:34px}.stats{gap:16px}}
 
 /* 오버레이(시작·결과) */
@@ -195,12 +196,12 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
 
 <div class="app" id="app">
   <div class="top">
-    <div class="brand"><i></i>심전도 타자연습 <span id="modeTag"></span></div>
+    <div class="brand"><i></i><span data-en="ECG Rhythm Typing">심전도 타자연습</span> <span id="modeTag"></span></div>
     <div class="stats">
-      <span>문항 <b id="sQ">0/0</b></span>
-      <span>점수 <b id="sScore">0</b></span>
-      <span>콤보 <b id="sCombo">0</b></span>
-      <span>정확도 <b id="sAcc">—</b></span>
+      <span><span data-en="Q">문항</span> <b id="sQ">0/0</b></span>
+      <span><span data-en="Score">점수</span> <b id="sScore">0</b></span>
+      <span><span data-en="Combo">콤보</span> <b id="sCombo">0</b></span>
+      <span><span data-en="Acc">정확도</span> <b id="sAcc">—</b></span>
     </div>
   </div>
 
@@ -212,7 +213,7 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
     <div class="speed">25 mm/s · 10 mm/mV</div>
     <div class="flash" id="flash"></div>
     <div class="big" id="big"></div>
-    <div class="alarmTag">⚠ VF · 제세동 준비</div>
+    <div class="alarmTag" data-en="⚠ VF · Prepare to defibrillate">⚠ VF · 제세동 준비</div>
     <div class="charge" id="charge"><span id="chargeTxt">CHARGING</span><i><b id="chargeBar"></b></i></div>
   </div>
   <div class="timer"><i id="timerBar"></i></div>
@@ -232,48 +233,53 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
 <div class="overlay" id="startOv">
   <div class="card">
     <div class="eyebrow">ECG · Lead II · Typing drill</div>
-    <h1>심전도 타자연습</h1>
-    <p class="lead">모양은 아는데 이름이 안 나온 적 있죠. 리듬을 눈 말고 손으로 외웁니다.<br>모니터에 흐르는 리듬의 이름을 치세요. 한글 이름과 영문 약어(VF, AF, SVT…) 모두 정답입니다.</p>
+    <h1 data-en="ECG Rhythm Typing">심전도 타자연습</h1>
+    <p class="lead" data-en="You know the shape but the name won't come. Learn rhythms with your hands, not just your eyes.<br>Type the name of the rhythm on the monitor. Full names and abbreviations (VF, AF, SVT…) both count.">모양은 아는데 이름이 안 나온 적 있죠. 리듬을 눈 말고 손으로 외웁니다.<br>모니터에 흐르는 리듬의 이름을 치세요. 한글 이름과 영문 약어(VF, AF, SVT…) 모두 정답입니다.</p>
 
     <div class="opt">
-      <label class="t">범위</label>
+      <label class="t">Language</label>
+      <div class="chips" id="langChips">
+        <button class="chip on" data-lang="ko">한국어</button>
+        <button class="chip" data-lang="en">English</button>
+      </div>
+      <label class="t" data-en="Range">범위</label>
       <div class="chips" id="lvChips">
-        <button class="chip on" data-lv="1">기초<small>동율동·AF·VT·VF·PVC…</small></button>
-        <button class="chip on" data-lv="2">중급<small>방실차단·조동·SVT</small></button>
-        <button class="chip" data-lv="3">고급<small>토르사드·접합부·조율기…</small></button>
+        <button class="chip on" data-lv="1" data-en="Basic<small>NSR·AF·VT·VF·PVC…</small>">기초<small>동율동·AF·VT·VF·PVC…</small></button>
+        <button class="chip on" data-lv="2" data-en="Intermediate<small>AV blocks·flutter·SVT</small>">중급<small>방실차단·조동·SVT</small></button>
+        <button class="chip" data-lv="3" data-en="Advanced<small>TdP·junctional·paced…</small>">고급<small>토르사드·접합부·조율기…</small></button>
       </div>
-      <label class="t">모드</label>
+      <label class="t" data-en="Mode">모드</label>
       <div class="chips" id="modeChips">
-        <button class="chip on" data-mode="learn">학습<small>이름 보고 따라치기</small></button>
-        <button class="chip" data-mode="test">시험<small>리듬만 보고 맞히기</small></button>
-        <button class="chip" data-mode="quiz">퀴즈<small>첫 글자만 보고 맞히기</small></button>
+        <button class="chip on" data-mode="learn" data-en="Learn<small>copy the name shown</small>">학습<small>이름 보고 따라치기</small></button>
+        <button class="chip" data-mode="test" data-en="Test<small>rhythm only, no name</small>">시험<small>리듬만 보고 맞히기</small></button>
+        <button class="chip" data-mode="quiz" data-en="Quiz<small>first letter only</small>">퀴즈<small>첫 글자만 보고 맞히기</small></button>
       </div>
-      <label class="t">시간</label>
+      <label class="t" data-en="Time">시간</label>
       <div class="chips" id="spdChips">
-        <button class="chip" data-sec="15">느림 15초</button>
-        <button class="chip on" data-sec="10">보통 10초</button>
-        <button class="chip" data-sec="6">빠름 6초</button>
+        <button class="chip" data-sec="15" data-en="Slow 15 s">느림 15초</button>
+        <button class="chip on" data-sec="10" data-en="Normal 10 s">보통 10초</button>
+        <button class="chip" data-sec="6" data-en="Fast 6 s">빠름 6초</button>
       </div>
-      <label class="t">문항</label>
+      <label class="t" data-en="Questions">문항</label>
       <div class="chips" id="cntChips">
         <button class="chip on" data-cnt="10">10</button>
         <button class="chip" data-cnt="20">20</button>
-        <button class="chip" data-cnt="0">전체</button>
+        <button class="chip" data-cnt="0" data-en="All">전체</button>
       </div>
-      <label class="t">소리</label>
+      <label class="t" data-en="Sound">소리</label>
       <div class="chips" id="sndChips">
-        <button class="chip on" data-snd="1">모니터 비프 ON</button>
+        <button class="chip on" data-snd="1" data-en="Monitor beep ON">모니터 비프 ON</button>
         <button class="chip" data-snd="0">OFF</button>
       </div>
-      <label class="t">설명</label>
+      <label class="t" data-en="Card">설명</label>
       <div class="chips" id="infoChips">
-        <button class="chip on" data-info="1">답 뒤에 카드<small>설명·간호 2줄, 잠깐 멈춤</small></button>
-        <button class="chip" data-info="0">없음<small>설명 없이 빠르게</small></button>
+        <button class="chip on" data-info="1" data-en="Card after answer<small>2 lines: facts + nursing, short pause</small>">답 뒤에 카드<small>설명·간호 2줄, 잠깐 멈춤</small></button>
+        <button class="chip" data-info="0" data-en="None<small>fast, no explanation</small>">없음<small>설명 없이 빠르게</small></button>
       </div>
     </div>
-    <button class="primary" id="startBtn">시작 (Enter)</button>
-    <button class="ghost" id="libBtn">리듬 사전 — 20개 설명·간호 중재 보기</button>
-    <div class="foot">정답은 <kbd>Enter</kbd> 없이 다 치면 자동 인정 · 시험 모드에서 <kbd>Tab</kbd>은 영문 약어 힌트 (점수 절반)<br>심실세동이 뜨면 이름을 친 뒤 <kbd>Space</kbd>로 제세동 (+300)<br>최고 점수 <b id="best">0</b></div>
+    <button class="primary" id="startBtn" data-en="Start (Enter)">시작 (Enter)</button>
+    <button class="ghost" id="libBtn" data-en="Rhythm library — 20 rhythms, facts & nursing">리듬 사전 — 20개 설명·간호 중재 보기</button>
+    <div class="foot" data-en="Answers are accepted as soon as you finish typing, no <kbd>Enter</kbd> · In test mode <kbd>Tab</kbd> shows the abbreviation (half points)<br>When VF appears, type the name, then press <kbd>Space</kbd> to defibrillate (+300)<br>Best score <b id=&quot;best&quot;>0</b>">정답은 <kbd>Enter</kbd> 없이 다 치면 자동 인정 · 시험 모드에서 <kbd>Tab</kbd>은 영문 약어 힌트 (점수 절반)<br>심실세동이 뜨면 이름을 친 뒤 <kbd>Space</kbd>로 제세동 (+300)<br>최고 점수 <b id="best">0</b></div>
   </div>
 </div>
 
@@ -281,23 +287,23 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
 <div class="overlay hide" id="endOv">
   <div class="card">
     <div class="eyebrow">Result</div>
-    <h1>결과</h1>
+    <h1 data-en="Result">결과</h1>
     <div class="res">
-      <div><b id="rScore">0</b><span>점수</span></div>
-      <div><b id="rAcc">0%</b><span>정확도</span></div>
-      <div><b id="rCombo">0</b><span>최고 콤보</span></div>
-      <div><b id="rRt">0.0s</b><span>평균 반응</span></div>
+      <div><b id="rScore">0</b><span data-en="Score">점수</span></div>
+      <div><b id="rAcc">0%</b><span data-en="Accuracy">정확도</span></div>
+      <div><b id="rCombo">0</b><span data-en="Best combo">최고 콤보</span></div>
+      <div><b id="rRt">0.0s</b><span data-en="Avg reaction">평균 반응</span></div>
     </div>
-    <h3>이번 라운드 복습 — 오답 먼저</h3>
+    <h3 data-en="Review this round — misses first">이번 라운드 복습 — 오답 먼저</h3>
     <div class="miss" id="missList"></div>
-    <div class="share"><button class="ghost" id="shareBtn">📸 결과 이미지 공유 · 저장</button><button class="ghost" id="copyBtn">🔗 링크 복사</button></div>
-    <p class="note" id="shareMsg">폰에서는 공유 창에서 인스타그램 스토리를 고를 수 있어요. PC에서는 이미지가 저장됩니다.</p>    <div class="cta">
-      <a id="ctaPdf" class="cta-primary" target="_blank" rel="noopener">📄 워크북 무료 미리보기 신청<small>이메일 신청 필요 · 발송일 미정<br>신청 폼이 새 창으로 열립니다.</small></a>
-      <a id="ctaAlert" target="_blank" rel="noopener">🔔 워크북 출시 알림 신청 (선택)<small>출시 안내를 받고 싶은 분만 신청해 주세요.<br>신청 폼이 새 창으로 열립니다.</small></a>
+    <div class="share"><button class="ghost" id="shareBtn" data-en="📸 Share · save result image">📸 결과 이미지 공유 · 저장</button><button class="ghost" id="copyBtn" data-en="🔗 Copy link">🔗 링크 복사</button></div>
+    <p class="note" id="shareMsg" data-en="On a phone you can pick Instagram Stories from the share sheet. On a PC the image is saved.">폰에서는 공유 창에서 인스타그램 스토리를 고를 수 있어요. PC에서는 이미지가 저장됩니다.</p>    <div class="cta">
+      <a id="ctaPdf" class="cta-primary" target="_blank" rel="noopener" data-en="📄 Request the free workbook preview<small>Email sign-up · send date TBD · Korean-language workbook<br>The form opens in a new window.</small>">📄 워크북 무료 미리보기 신청<small>이메일 신청 필요 · 발송일 미정<br>신청 폼이 새 창으로 열립니다.</small></a>
+      <a id="ctaAlert" target="_blank" rel="noopener" data-en="🔔 Workbook launch alert (optional)<small>Only if you want to hear when it launches.<br>The form opens in a new window.</small>">🔔 워크북 출시 알림 신청 (선택)<small>출시 안내를 받고 싶은 분만 신청해 주세요.<br>신청 폼이 새 창으로 열립니다.</small></a>
     </div>
-    <p class="note">게임은 신청 없이 무료로 계속 이용할 수 있습니다. 미리보기 신청은 구매가 아니며, 홍보·광고성 이메일 수신 동의는 선택입니다.</p>
-    <button class="primary" id="againBtn">같은 설정으로 다시 (Enter)</button>
-    <button class="ghost" id="setupBtn">설정 바꾸기</button>
+    <p class="note" data-en="The game stays free without signing up. The preview request is not a purchase, and consent to marketing email is optional.">게임은 신청 없이 무료로 계속 이용할 수 있습니다. 미리보기 신청은 구매가 아니며, 홍보·광고성 이메일 수신 동의는 선택입니다.</p>
+    <button class="primary" id="againBtn" data-en="Again, same settings (Enter)">같은 설정으로 다시 (Enter)</button>
+    <button class="ghost" id="setupBtn" data-en="Change settings">설정 바꾸기</button>
   </div>
 </div>
 
@@ -305,11 +311,11 @@ h3{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:up
 <div class="overlay hide" id="libOv" style="z-index:12">
   <div class="card lib">
     <div class="eyebrow">Library · 20 rhythms</div>
-    <h1>리듬 사전</h1>
-    <p class="lead">모니터에서 보이는 단서, 한 줄 설명, 간호사가 먼저 할 일. 기초 → 중급 → 고급 순서.</p>
+    <h1 data-en="Rhythm library">리듬 사전</h1>
+    <p class="lead" data-en="What you see on the monitor, a one-line explanation, and what the nurse does first. Basic → intermediate → advanced.">모니터에서 보이는 단서, 한 줄 설명, 간호사가 먼저 할 일. 기초 → 중급 → 고급 순서.</p>
     <div class="miss" id="libList" style="max-height:58vh"></div>
-    <div class="note">학습용 요약입니다. 실제 처치는 소속 기관의 프로토콜과 의사 지시를 따릅니다.</div>
-    <button class="ghost" id="libClose">닫기 (Esc)</button>
+    <div class="note" data-en="Study summary only. Follow your institution's protocol and physician orders for real care.">학습용 요약입니다. 실제 처치는 소속 기관의 프로토콜과 의사 지시를 따릅니다.</div>
+    <button class="ghost" id="libClose" data-en="Close (Esc)">닫기 (Esc)</button>
   </div>
 </div>
 
@@ -335,13 +341,13 @@ const RHYTHMS=[
  {id:'pvc', lv:1, name:'심실조기수축', en:'PVC', hr:75, clue:'넓고 이른 QRS가 끼어들고, 뒤에 보상성 휴지기',
   alias:['심실조기수축','심실기외수축','조기심실수축','pvc','prematureventricularcontraction','브이피씨','피브이씨']},
  {id:'avb1', lv:2, name:'1도 방실차단', en:'1° AVB', hr:70, clue:'PR 간격이 0.20초 넘게 일정하게 길다, 탈락 없음',
-  alias:['1도방실차단','일도방실차단','1도av차단','1도avblock','firstdegreeavblock','1stdegreeavblock','1도블락','1도차단','1stavb','avb1','1avb','1도']},
+  alias:['1도방실차단','일도방실차단','1도av차단','1도avblock','firstdegreeavblock','1stdegreeavblock','1도블락','1도차단','1stavb','avb1','1avb']},
  {id:'mob1', lv:2, name:'2도 방실차단 모비츠 1형', en:'Mobitz I', hr:60, clue:'PR이 점점 길어지다 QRS 하나 탈락 (웬케바흐)',
   alias:['2도방실차단모비츠1형','2도방실차단1형','2도방실차단type1','2도방실차단타입1','2도1형','모비츠1형','모비츠1','모비츠i','웬케바흐','웽케바흐','mobitz1','mobitzi','mobitztype1','wenckebach','2도방실차단웬케바흐','seconddegreetype1','2도형1']},
  {id:'mob2', lv:2, name:'2도 방실차단 모비츠 2형', en:'Mobitz II', hr:50, clue:'PR 일정한데 QRS가 갑자기 탈락 → 조율기 준비',
   alias:['2도방실차단모비츠2형','2도방실차단2형','2도방실차단type2','2도방실차단타입2','2도2형','모비츠2형','모비츠2','모비츠ii','mobitz2','mobitzii','mobitztype2','seconddegreetype2','2도형2']},
  {id:'avb3', lv:2, name:'3도 방실차단', en:'CHB', hr:38, clue:'P와 QRS가 각자 규칙적으로 따로 논다 (완전차단)',
-  alias:['3도방실차단','삼도방실차단','완전방실차단','완전차단','3도av차단','3도블락','3도차단','chb','completeheartblock','thirddegreeavblock','3rddegreeavblock','avb3','3avb','3도']},
+  alias:['3도방실차단','삼도방실차단','완전방실차단','완전차단','3도av차단','3도블락','3도차단','chb','completeheartblock','thirddegreeavblock','3rddegreeavblock','avb3','3avb']},
  {id:'afl', lv:2, name:'심방조동', en:'A-flutter', hr:75, clue:'톱니 모양 F파 300회/분, QRS는 규칙적 (4:1)',
   alias:['심방조동','afl','aflutter','a-flutter','atrialflutter','플러터','에이플러터']},
  {id:'sa', lv:2, name:'동정지', en:'Sinus arrest', hr:70, clue:'정상 리듬 중 P-QRS-T가 통째로 빠지는 긴 휴지',
@@ -382,9 +388,32 @@ const INFO={
  paced:{know:'조율기 스파이크 뒤에 넓은 QRS. 스파이크 뒤 QRS가 없으면 포획 실패.',nurse:'스파이크마다 QRS가 따라오는지(포획) 확인. 설정·배터리·전극 확인, 포획·감지 실패 시 보고.'},
  pac:{know:'심방에서 조기 발생, P 모양이 다르고 QRS는 좁다. 카페인·스트레스·피로와 관련.',nurse:'대개 양성. 빈발하면 카페인·흡연·전해질 확인, AF로 진행하는지 관찰.'},
 };
-RHYTHMS.forEach(r=>Object.assign(r,INFO[r.id]||{}));
+/* 영어판: name은 타자 목표(전체 이름), 나머지는 표시 문구 */
+const EN={
+ nsr:{name:'Normal sinus rhythm',clue:'Regular P-QRS-T, 60–100/min, PR 0.12–0.20 s',know:'Normal rhythm from the SA node. Regular P-QRS-T at 60–100/min.',nurse:'Normal. Record with the other vital signs and watch the trend.'},
+ sb:{name:'Sinus bradycardia',clue:'Normal shape but under 60/min',know:'Under 60/min. Common in athletes, sleep, beta-blockers and vagal stimulation.',nurse:'Check for dizziness, hypotension, syncope. If symptomatic: prepare atropine, review rate-slowing drugs, have transcutaneous pacing ready.'},
+ st:{name:'Sinus tachycardia',clue:'Normal shape but over 100/min, P waves present',know:'Over 100/min with normal P waves. A response to pain, fever, dehydration, anxiety, anemia or bleeding.',nurse:'Treat the cause, not the rhythm: check pain, temperature, fluid status and bleeding, then correct it.'},
+ af:{name:'Atrial fibrillation',clue:'No P waves + fine fibrillatory waves + totally irregular RR',know:'Atria quiver at 350–600/min; no P waves, irregular RR. Atrial clots → stroke risk.',nurse:'Check pulse deficit (apical vs radial). Report new AF or ventricular rate over 100. After anticoagulants / rate control, watch for bleeding.'},
+ vt:{name:'Ventricular tachycardia',clue:'Wide QRS, fast and regular, no P waves → check pulse',know:'Fast ventricular rhythm (over 100), 3 or more wide QRS in a row. Pulse may be present or absent.',nurse:'Pulse check first. Pulseless → CPR and defibrillation. Pulse but unstable → synchronized cardioversion; stable → amiodarone. Keep the defibrillator at hand and report at once.'},
+ vf:{name:'Ventricular fibrillation',clue:'No recognizable waves, chaotic quivering → defibrillate now',know:'Ventricles quiver chaotically with no cardiac output. A shockable arrest rhythm.',nurse:'Confirm no pulse → call a code, immediate CPR + defibrillation, rhythm check every 2 min. Prepare epinephrine and amiodarone.'},
+ asys:{name:'Asystole',clue:'Flat line → check leads and gain, then CPR; not shockable',know:'Flat line with no electrical activity. Defibrillation does not work.',nurse:'First check lead detachment and gain. If pulseless: CPR + epinephrine. Look for reversible causes (H’s & T’s).'},
+ pvc:{name:'Premature ventricular contraction',clue:'Wide, early QRS squeezed in, then a compensatory pause',know:'Early wide QRS from the ventricle followed by a compensatory pause. Linked to electrolytes, hypoxia, caffeine, ischemia.',nurse:'Check frequency (over 6/min, runs, R on T) and symptoms. Check K, Mg and SpO₂, then report.'},
+ avb1:{name:'First-degree AV block',clue:'PR constantly longer than 0.20 s, no dropped beats',know:'PR prolonged over 0.20 s but every beat conducts. Linked to digoxin, beta-blockers, ischemia.',nurse:'Usually asymptomatic. Review causative drugs and watch for progression to a higher block.'},
+ mob1:{name:'Second-degree AV block Mobitz I',clue:'PR lengthens until one QRS drops (Wenckebach)',know:'PR gets longer and longer until a QRS drops, then the cycle repeats (Wenckebach). Usually benign.',nurse:'Check symptoms and BP. Atropine for symptomatic bradycardia; review drugs such as digoxin.'},
+ mob2:{name:'Second-degree AV block Mobitz II',clue:'PR constant but QRS drops suddenly → prepare pacing',know:'PR is constant but a QRS drops without warning. Risk of progressing to complete block.',nurse:'Report immediately. Prepare transcutaneous pacing pads (atropine has little effect). Explain the possibility of a permanent pacemaker.'},
+ avb3:{name:'Third-degree AV block',clue:'P and QRS each regular but independent (complete block)',know:'P waves and QRS beat completely independently. Ventricular escape rhythm, very slow at 20–40/min.',nurse:'Check BP and consciousness. Prepare transcutaneous pacing now (emergency), epinephrine and dopamine. Candidate for a permanent pacemaker.'},
+ afl:{name:'Atrial flutter',clue:'Sawtooth F waves at 300/min, QRS regular (4:1)',know:'Sawtooth F waves at 250–350/min. Ventricles conduct 2:1 or 4:1.',nurse:'As in AF: pulse deficit, anticoagulation, rate control. If unstable, prepare synchronized cardioversion.'},
+ sa:{name:'Sinus arrest',clue:'A whole P-QRS-T goes missing in a long pause',know:'The SA node briefly stops firing, so a whole P-QRS-T is missing in a long pause. Vagal tone, drugs, sick sinus.',nurse:'Report pauses over 3 s or dizziness / syncope. Prepare atropine and transcutaneous pacing; review rate-slowing drugs.'},
+ svt:{name:'Supraventricular tachycardia',clue:'Narrow QRS at 150–250/min, regular, P waves hidden',know:'Fast rhythm from the atria or junction (150–250), narrow QRS, P waves hidden. Starts and stops suddenly.',nurse:'Try vagal maneuvers (Valsalva, ice water) → rapid IV adenosine (6 → 12 mg, flush at once, monitor on). If unstable, cardioversion.'},
+ tdp:{name:'Torsades de pointes',clue:'QRS amplitude twists bigger and smaller → magnesium',know:'Polymorphic VT from a long QT. QRS twists bigger and smaller. Low Mg, low K, QT-prolonging drugs.',nurse:'Prepare IV magnesium. Check for QT-prolonging drugs (antiemetics, antipsychotics, some antibiotics) to stop. If pulseless, defibrillate.'},
+ junc:{name:'Junctional rhythm',clue:'P waves absent or inverted, narrow QRS, 40–60/min',know:'From the AV junction at 40–60/min. P waves absent or inverted (before or after the QRS).',nurse:'Check symptoms and BP. If digoxin toxicity is suspected, check the level. Atropine / pacing for symptomatic bradycardia.'},
+ ivr:{name:'Idioventricular rhythm',clue:'Wide QRS, slow at 20–40/min, no P waves',know:'Ventricular escape rhythm at 20–40/min with wide QRS. Every higher pacemaker has failed.',nurse:'Check pulse (PEA possible). Prepare transcutaneous pacing and epinephrine. Lidocaine is contraindicated: it suppresses the escape rhythm.'},
+ paced:{name:'Paced rhythm',clue:'Vertical spike right before a wide QRS',know:'Pacer spike followed by a wide QRS. A spike with no QRS after it is failure to capture.',nurse:'Check that every spike is followed by a QRS (capture). Check settings, battery and leads; report failure to capture or sense.'},
+ pac:{name:'Premature atrial contraction',clue:'Early beat, but QRS narrow and P wave shaped differently',know:'Early beat from the atrium: different P wave shape, narrow QRS. Linked to caffeine, stress, fatigue.',nurse:'Usually benign. If frequent, check caffeine, smoking and electrolytes; watch for progression to AF.'},
+};
+RHYTHMS.forEach(r=>{ Object.assign(r,INFO[r.id]||{}); r.KO={name:r.name,clue:r.clue,know:r.know,nurse:r.nurse}; r.EN=EN[r.id]; });
 const norm=s=>s.toLowerCase().normalize('NFC').replace(/ⅰ/g,'i').replace(/ⅱ/g,'ii').replace(/°/g,'도').replace(/[\s()\[\]·.,\-_'’"]/g,'');
-RHYTHMS.forEach(r=>{ r.set=new Set([r.name,r.en,...r.alias].map(norm)); });
+RHYTHMS.forEach(r=>{ r.set=new Set([r.name,r.EN.name,r.en,...r.alias].map(norm)); });
 
 /* ================= 파형 모델 ================= */
 const g=(x,c,s)=>Math.exp(-((x-c)*(x-c))/(2*s*s));
@@ -546,19 +575,38 @@ chips('spdChips',()=>{ S.sec=+$('spdChips').querySelector('.chip.on').dataset.se
 chips('cntChips',()=>{ S.cnt=+$('cntChips').querySelector('.chip.on').dataset.cnt; });
 chips('sndChips',()=>{ S.snd=+$('sndChips').querySelector('.chip.on').dataset.snd; });
 chips('infoChips',()=>{ S.info=+$('infoChips').querySelector('.chip.on').dataset.info; });
+/* ----- 언어: 정적 문구는 data-en 속성, 동적 문구는 T, 리듬 문구는 r.KO/r.EN 교체 ----- */
+const T={timeout:['시간 초과','Time out'],wrong:['오답: ','Wrong: '],ph:['리듬 이름을 입력하세요','Type the rhythm name'],ans:['정답','Answer'],know:['설명','Facts'],nurse:['간호','Nursing'],
+ lv1:['기초','Basic'],lv2:['중급','Intermediate'],lv3:['고급','Advanced'],learn:['학습','Learn'],test:['시험','Test'],quiz:['퀴즈','Quiz'],modeQ:[' 모드 · {n}문항',' mode · {n} questions'],
+ charging:['<b>심실세동</b> · 제세동기 충전 중…','<b>Ventricular fibrillation</b> · charging defibrillator…'],ready:['<b>충전 완료</b> · Space 키로 충격!','<b>Charged</b> · press Space to shock!'],
+ recov:['리듬 회복','Rhythm restored'],recovUser:['<b>동율동 회복</b> · 제세동 성공','<b>Sinus rhythm restored</b> · shock successful'],recovAuto:['<b>동율동 회복</b> · 다음엔 Space로 직접 충격','<b>Sinus rhythm restored</b> · next time press Space yourself'],
+ allOk:['전부 맞혔습니다. 제한시간을 줄이거나 범위를 넓혀 보세요.','All correct. Try a shorter time limit or a wider range.'],copy:['🔗 링크 복사','🔗 Copy link'],copied:['✓ 복사됨','✓ Copied'],copyPrompt:['주소를 복사하세요','Copy this address'],
+ title:['심전도 타자연습','ECG Rhythm Typing'],acc:['정확도','Accuracy'],combo:['최고 콤보','Best combo'],rt:['평균 반응','Avg reaction'],tryMe:['나도 해보기 →','Try it yourself →'],
+ shareTxt:['심전도 타자연습 {s}점 — 나도 해보기 {u}','ECG Rhythm Typing: {s} points — try it {u}'],imgAlt:['내 결과 이미지','My result image'],
+ saved:['이미지를 저장했어요(안 됐다면 아래 이미지를 길게 눌러 저장). 스토리에 올리고 링크 스티커에 주소를 붙여 보세요.','Image saved (if not, long-press the image below to save). Post it to your story and add the link sticker.']};
+const t=(k,v={})=>T[k][S.lang==='en'?1:0].replace(/\{(\w+)\}/g,(_,n)=>v[n]);
+const LVN=l=>t('lv'+l);
+function setLang(l){
+  S.lang=l; document.documentElement.lang=l; try{ localStorage.setItem('ecgtype_lang',l); }catch(e){}
+  document.querySelectorAll('[data-en]').forEach(el=>{ if(el.dataset.ko===undefined) el.dataset.ko=el.innerHTML; el.innerHTML=l==='en'?el.dataset.en:el.dataset.ko; });
+  $('best').textContent=S.bestScore; $('langChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.lang===l));
+  RHYTHMS.forEach(r=>Object.assign(r,l==='en'?r.EN:r.KO)); buildLib();
+}
+chips('langChips',()=>{ setLang($('langChips').querySelector('.chip.on').dataset.lang); });
 const info=$('info');
-const kn=r=>`<div class="kn"><em>설명</em><div>${r.know||''}</div><em>간호</em><div>${r.nurse||''}</div></div>`;
-function showInfo(r){ if(!S.info||!r) return; info.innerHTML=`<em>설명</em><div>${r.know||''}</div><em>간호</em><div>${r.nurse||''}</div>`; info.classList.add('on'); }
+const kn=r=>`<div class="kn"><em>${t('know')}</em><div>${r.know||''}</div><em>${t('nurse')}</em><div>${r.nurse||''}</div></div>`;
+function showInfo(r){ if(!S.info||!r) return; info.innerHTML=`<em>${t('know')}</em><div>${r.know||''}</div><em>${t('nurse')}</em><div>${r.nurse||''}</div>`; info.classList.add('on'); }
 function hideInfo(){ info.classList.remove('on'); }
 /* 리듬 사전 */
-const LV={1:'기초',2:'중급',3:'고급'};
-$('libList').innerHTML=RHYTHMS.slice().sort((a,b)=>a.lv-b.lv).map(r=>`<div class="m"><b>${r.name}<span>${r.en}</span><span class="lv">${LV[r.lv]}</span></b><i></i><em>${r.clue}</em>${kn(r)}</div>`).join('');
+function buildLib(){ $('libList').innerHTML=RHYTHMS.slice().sort((a,b)=>a.lv-b.lv).map(r=>`<div class="m"><b>${r.name}<span>${r.en}</span><span class="lv">${LVN(r.lv)}</span></b><i></i><em>${r.clue}</em>${kn(r)}</div>`).join(''); }
+buildLib();
 $('libBtn').addEventListener('click',()=>{ $('libOv').classList.remove('hide'); });
 $('libClose').addEventListener('click',()=>{ $('libOv').classList.add('hide'); });
 
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 /* URL 파라미터(촬영용): ?seq=vt,vf,af&mode=test&sec=8&snd=0 */
 const P=new URLSearchParams(location.search);
+{ let l=P.get('lang'); if(!l){ try{ l=localStorage.getItem('ecgtype_lang'); }catch(e){} } if(l==='en') setLang('en'); else S.lang='ko'; }
 if(P.get('mode')){ S.mode=['test','quiz'].includes(P.get('mode'))?P.get('mode'):'learn'; $('modeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.mode===S.mode)); }
 if(P.get('sec')){ S.sec=Math.max(3,+P.get('sec')||10); }
 if(P.get('snd')!==null){ S.snd=+P.get('snd')?1:0; $('sndChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',+c.dataset.snd===S.snd)); }
@@ -592,7 +640,7 @@ function next(){
 }
 function armTimer(){
   S.tStart=performance.now();
-  S.timer=setInterval(()=>{ const el=(performance.now()-S.tStart)/1000, left=Math.max(0,1-el/S.sec); timerBar.style.transform=`scaleX(${left})`; timerBar.classList.toggle('low',left<.3); if(left<=0) miss('시간 초과'); },50);
+  S.timer=setInterval(()=>{ const el=(performance.now()-S.tStart)/1000, left=Math.max(0,1-el/S.sec); timerBar.style.transform=`scaleX(${left})`; timerBar.classList.toggle('low',left<.3); if(left<=0) miss(t('timeout')); },50);
 }
 /* 활력징후 패널: 리듬에 맞춰 대충 그럴듯하게 */
 function setVitals(id){ const v=['vf','asys'].includes(id)?['--','--/--','--']: ['vt','tdp','ivr','avb3'].includes(id)?['91','84/52','24']: ['svt','af','afl'].includes(id)?['95','102/64','20']: ['sb','junc','mob2','sa'].includes(id)?['96','96/58','14']: ['98','118/76','16']; $('vSpo2').textContent=v[0]; $('vBp').textContent=v[1]; $('vRr').textContent=v[2]; }
@@ -616,14 +664,14 @@ function render(){
       const ghost=(S.mode==='learn'||i===0||tc===' ')?`<span class="c">${esc(tc)}</span>`:'<span class="c slot">&nbsp;</span>';
       if(uc===undefined){ if(i===U.length) html+='<span class="caret"></span>'; html+=ghost; }
       else if(tc===undefined) html+=`<span class="c extra">${esc(uc)}</span>`;
-      else if(uc===tc) html+=`<span class="c ok${nw}">${esc(uc)}</span>`;
+      else if(uc.toLowerCase()===tc.toLowerCase()) html+=`<span class="c ok${nw}">${esc(uc)}</span>`;
       else if(i===U.length-1&&composing) html+=`<span class="c mid">${esc(uc)}</span>`;
       else html+=`<span class="c bad">${esc(uc)}</span>`;
     }
     if(U.length>=T.length) html+='<span class="caret"></span>';
     if(S.cur&&(S.mode==='learn'||S.hint)) html+=`<span class="c en">${S.cur.en}</span>`;
   } else {
-    if(!typed) html+='<span class="ph">리듬 이름을 입력하세요</span>';
+    if(!typed) html+=`<span class="ph">${t('ph')}</span>`;
     else html+=U.map((c,i)=>`<span class="c ok${(grew&&i===U.length-1)?' new':''}">${esc(c)}</span>`).join('');
     html+='<span class="caret"></span>';
     if(S.hint&&S.cur) html+=`<span class="c en">${S.cur.en}</span>`;
@@ -634,7 +682,7 @@ function render(){
 function onInput(){ if(S.locked||!S.cur) return; render(); if(!composing && S.cur.set.has(norm(ime.value))) correct(); }
 ime.addEventListener('keydown',e=>{
   if(S.locked){ e.preventDefault(); return; }
-  if(e.key==='Enter'){ e.preventDefault(); if(composing||e.isComposing) return; if(!ime.value.trim()) return; if(S.cur.set.has(norm(ime.value))) correct(); else miss('오답: '+ime.value); }
+  if(e.key==='Enter'){ e.preventDefault(); if(composing||e.isComposing) return; if(!ime.value.trim()) return; if(S.cur.set.has(norm(ime.value))) correct(); else miss(t('wrong')+ime.value); }
   if(e.key==='Tab'){ e.preventDefault(); if(S.mode!=='learn'){ S.hint=true; render(); } }
   if(e.key==='Escape'){ e.preventDefault(); ime.value=''; render(); }
 });
@@ -668,9 +716,9 @@ function bigClear(){ big.className='big'; }
 function startShock(){
   alarmStop(); S.shock='charging'; charge.className='charge on'; chargeTxt.textContent='CHARGING · 200 J';
   chargeBar.style.transition='none'; chargeBar.style.width='0'; void chargeBar.offsetWidth; chargeBar.style.transition='width 1.3s cubic-bezier(.3,.7,.3,1)'; chargeBar.style.width='100%';
-  sub.className='sub ok'; sub.innerHTML='<b>심실세동</b> · 제세동기 충전 중…';
+  sub.className='sub ok'; sub.innerHTML=t('charging');
   if(S.snd) chargeWhine();
-  S.shockTO=setTimeout(()=>{ S.shock='ready'; charge.classList.add('ready'); chargeTxt.textContent='READY · 200 J'; bigHold('SPACE — SHOCK'); sub.innerHTML='<b>충전 완료</b> · Space 키로 충격!'; S.shockTO=setTimeout(()=>deliverShock(false),4000); },1400);
+  S.shockTO=setTimeout(()=>{ S.shock='ready'; charge.classList.add('ready'); chargeTxt.textContent='READY · 200 J'; bigHold('SPACE — SHOCK'); sub.innerHTML=t('ready'); S.shockTO=setTimeout(()=>deliverShock(false),4000); },1400);
 }
 function deliverShock(byUser){
   if(S.shock!=='ready'&&S.shock!=='charging') return; clearTimeout(S.shockTO); S.shock='done';
@@ -683,7 +731,7 @@ function deliverShock(byUser){
   if(S.snd){ tone(60,.35,'sine',.25); tone(2200,.04,'square',.06); }
   cells.querySelectorAll('.c').forEach((el,i)=>setTimeout(()=>burstEl(el,12,1.3),i*15));
   if(byUser){ S.score+=300; updStats(); }
-  setTimeout(()=>{ bigText(byUser?'리듬 회복 · +300':'리듬 회복'); setVitals('nsr'); if(byUser) scorePop(300); sub.innerHTML=byUser?'<b>동율동 회복</b> · 제세동 성공':'<b>동율동 회복</b> · 다음엔 Space로 직접 충격'; },1900);
+  setTimeout(()=>{ bigText(t('recov')+(byUser?' · +300':'')); setVitals('nsr'); if(byUser) scorePop(300); sub.innerHTML=t(byUser?'recovUser':'recovAuto'); },1900);
   setTimeout(()=>{ charge.className='charge'; S.shock=null; S.shocked=false; next(); },4300);
 }
 function miss(why){
@@ -692,7 +740,7 @@ function miss(why){
   app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake');
   noiseBurst(); alarmStop();
   cells.querySelectorAll('.c').forEach(el=>burstEl(el,5,.6,true));
-  sub.className='sub bad'; sub.innerHTML=`${esc(why)} → 정답 <b>${S.cur.name}</b> (${S.cur.en}) · ${S.cur.clue}`;
+  sub.className='sub bad'; sub.innerHTML=`${esc(why)} → ${t('ans')} <b>${S.cur.name}</b> (${S.cur.en}) · ${S.cur.clue}`;
   if(S.mode!=='learn'){ cells.innerHTML=[...S.cur.name].map(c=>`<span class="c bad">${esc(c)}</span>`).join(''); }
   flashMon('bad'); S.i++; showInfo(S.cur); setTimeout(next,S.info?3400:2200);
 }
@@ -700,14 +748,14 @@ function flashMon(k){ flash.className='flash '+k+' show'; requestAnimationFrame(
 
 function endGame(){
   running=false; clearInterval(S.timer); clearTimeout(S.qTO); alarmStop(); S.cur=null; hrEl.textContent='--';
-  const t=S.right+S.wrong, acc=t?Math.round(S.right/t*100):0, rt=S.rts.length? (S.rts.reduce((a,b)=>a+b,0)/S.rts.length):0;
+  const tot=S.right+S.wrong, acc=tot?Math.round(S.right/tot*100):0, rt=S.rts.length? (S.rts.reduce((a,b)=>a+b,0)/S.rts.length):0;
   $('rScore').textContent=S.score; $('rAcc').textContent=acc+'%'; $('rCombo').textContent=S.best; $('rRt').textContent=rt.toFixed(1)+'s';
   /* 공유 이미지는 미리 만들어 둔다: 버튼 클릭 직후 바로 공유 창을 띄워야 사파리가 막지 않음 */
-  S.shareBlob=null; $('shareImg')?.remove(); $('copyBtn').textContent='🔗 링크 복사';
-  buildShare({score:S.score,acc,combo:S.best,rt:rt.toFixed(1),label:`${[...S.lv].sort().map(l=>LV[l]).join('·')} · ${({learn:'학습',test:'시험',quiz:'퀴즈'})[S.mode]} 모드 · ${t}문항`}).then(b=>S.shareBlob=b);
+  S.shareBlob=null; $('shareImg')?.remove(); $('copyBtn').textContent=t('copy');
+  buildShare({score:S.score,acc,combo:S.best,rt:rt.toFixed(1),label:`${[...S.lv].sort().map(LVN).join('·')} · ${t(S.mode)}${t('modeQ',{n:tot})}`}).then(b=>S.shareBlob=b);
   const missed=new Set(S.misses.map(m=>m.r.id)), whyOf={}; S.misses.forEach(m=>{ if(!whyOf[m.r.id]) whyOf[m.r.id]=m.why; });
   const list=[...new Set(S.queue.map(r=>r.id))].map(id=>RHYTHMS.find(r=>r.id===id)).sort((a,b)=>(missed.has(b.id)?1:0)-(missed.has(a.id)?1:0));
-  $('missList').innerHTML=(missed.size?'':'<div class="none">전부 맞혔습니다. 제한시간을 줄이거나 범위를 넓혀 보세요.</div>')+list.map(r=>`<div class="m${missed.has(r.id)?' bad':''}"><b>${r.name}<span>${r.en}</span></b><i>${missed.has(r.id)?'✕ '+esc(whyOf[r.id]):'✓'}</i><em>${r.clue}</em>${kn(r)}</div>`).join('');
+  $('missList').innerHTML=(missed.size?'':`<div class="none">${t('allOk')}</div>`)+list.map(r=>`<div class="m${missed.has(r.id)?' bad':''}"><b>${r.name}<span>${r.en}</span></b><i>${missed.has(r.id)?'✕ '+esc(whyOf[r.id]):'✓'}</i><em>${r.clue}</em>${kn(r)}</div>`).join('');
   if(S.score>S.bestScore){ S.bestScore=S.score; try{ localStorage.setItem('ecgtype_best',S.score); }catch(e){} $('best').textContent=S.score; }
   cells.innerHTML=''; sub.textContent=''; hideInfo(); timerBar.style.transform='scaleX(0)';
   $('endOv').classList.remove('hide');
@@ -720,7 +768,7 @@ function buildShare(st){
   const c=document.createElement('canvas'); c.width=1080; c.height=1920; const x=c.getContext('2d');
   const F=(w,s)=>`${w} ${s}px -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif`, M=(w,s)=>`${w} ${s}px "SF Mono",Menlo,Consolas,monospace`;
   x.fillStyle='#050505'; x.fillRect(0,0,1080,1920); x.textAlign='center';
-  x.fillStyle='#f4f4f4'; x.font=F(600,64); x.fillText('심전도 타자연습',540,300);
+  x.fillStyle='#f4f4f4'; x.font=F(600,64); x.fillText(t('title'),540,300);
   x.fillStyle='#8e8e8e'; x.font=M(400,26); x.fillText('E C G   R H Y T H M   T Y P I N G',540,350);
   const mx=80,my=420,mw=920,mh=420; x.fillStyle='#000'; x.strokeStyle='rgba(255,255,255,.16)'; x.lineWidth=2;
   x.beginPath(); if(x.roundRect) x.roundRect(mx,my,mw,mh,28); else x.rect(mx,my,mw,mh); x.fill(); x.stroke();
@@ -732,22 +780,22 @@ function buildShare(st){
   x.stroke(); ev=keep; x.restore(); x.shadowBlur=0;
   x.fillStyle='#8e8e8e'; x.font=M(400,30); x.fillText('S C O R E',540,990);
   x.fillStyle='#39ff8a'; x.font=M(200,230); x.fillText(String(st.score),540,1200);
-  [['정확도',st.acc+'%'],['최고 콤보',String(st.combo)],['평균 반응',st.rt+'s']].forEach(([k,v],i)=>{ const px=220+i*320; x.fillStyle='#f4f4f4'; x.font=M(300,72); x.fillText(v,px,1380); x.fillStyle='#8e8e8e'; x.font=F(400,30); x.fillText(k,px,1432); });
+  [[t('acc'),st.acc+'%'],[t('combo'),String(st.combo)],[t('rt'),st.rt+'s']].forEach(([k,v],i)=>{ const px=220+i*320; x.fillStyle='#f4f4f4'; x.font=M(300,72); x.fillText(v,px,1380); x.fillStyle='#8e8e8e'; x.font=F(400,30); x.fillText(k,px,1432); });
   x.fillStyle='#bdbdbd'; x.font=F(400,34); x.fillText(st.label,540,1530);
-  x.fillStyle='#f4f4f4'; x.font=F(600,40); x.fillText('나도 해보기 →',540,1660);
+  x.fillStyle='#f4f4f4'; x.font=F(600,40); x.fillText(t('tryMe'),540,1660);
   x.fillStyle='#39ff8a'; x.font=M(400,30); x.fillText(SITE.replace(/^https?:\/\//,'').replace(/\/$/,''),540,1712);
   return new Promise(r=>c.toBlob(r,'image/png'));
 }
 $('shareBtn').addEventListener('click',async()=>{
   const b=S.shareBlob; if(!b) return;
   const f=new File([b],'ecg-typing-result.png',{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],text:`심전도 타자연습 ${$('rScore').textContent}점 — 나도 해보기 ${SITE}`}); return; }catch(e){ if(e.name==='AbortError') return; } }
+  if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],text:t('shareTxt',{s:$('rScore').textContent,u:SITE})}); return; }catch(e){ if(e.name==='AbortError') return; } }
   // 공유 창이 없는 환경: 저장 시도 + 길게 눌러 저장할 수 있게 이미지를 보여 준다
   const u=URL.createObjectURL(b), a=document.createElement('a'); a.href=u; a.download=f.name; a.click();
-  let im=$('shareImg'); if(!im){ im=document.createElement('img'); im.id='shareImg'; im.alt='내 결과 이미지'; $('shareMsg').after(im); } im.src=u;
-  $('shareMsg').textContent='이미지를 저장했어요(안 됐다면 아래 이미지를 길게 눌러 저장). 스토리에 올리고 링크 스티커에 주소를 붙여 보세요.';
+  let im=$('shareImg'); if(!im){ im=document.createElement('img'); im.id='shareImg'; im.alt=t('imgAlt'); $('shareMsg').after(im); } im.src=u;
+  $('shareMsg').textContent=t('saved');
 });
-$('copyBtn').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(SITE); $('copyBtn').textContent='✓ 복사됨'; }catch(e){ prompt('주소를 복사하세요',SITE); } });
+$('copyBtn').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(SITE); $('copyBtn').textContent=t('copied'); }catch(e){ prompt(t('copyPrompt'),SITE); } });
 $('againBtn').addEventListener('click',startGame);
 $('setupBtn').addEventListener('click',()=>{ $('endOv').classList.add('hide'); $('startOv').classList.remove('hide'); });
 addEventListener('keydown',e=>{
